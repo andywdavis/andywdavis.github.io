@@ -107,9 +107,9 @@ button:active:not(:disabled){filter:brightness(1.15)}
 .install-card p,.install-card li{font-size:13px;line-height:1.4}
 .install-card button{min-height:38px}
 
-/* Fixed four-action contact bar, separate from every printed catalogue page. */
+/* Fixed five-action contact bar, separate from every printed catalogue page. */
 nav{padding-bottom:3px}
-#contactBar{flex:0 0 auto;z-index:11;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;padding:5px 6px max(6px,env(safe-area-inset-bottom));background:linear-gradient(180deg,#0f1926,#080f1a);border-top:1px solid #35465c;box-shadow:0 -1px 10px #0005;width:100%}
+#contactBar{flex:0 0 auto;z-index:11;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;padding:5px 5px max(6px,env(safe-area-inset-bottom));background:linear-gradient(180deg,#0f1926,#080f1a);border-top:1px solid #35465c;box-shadow:0 -1px 10px #0005;width:100%}
 .contact-button{min-width:0;height:39px;padding:0 3px;text-align:center;display:flex;align-items:center;justify-content:center;gap:4px;border:1px solid #ffffff61;border-radius:9px;text-decoration:none;color:#fff;font-weight:850;font-size:clamp(10px,2.8vw,13px);letter-spacing:-.025em;line-height:1.05;text-shadow:0 1px 1px #0007;box-shadow:inset 0 1px 0 #ffffff52,0 2px 5px #0005;white-space:nowrap;touch-action:manipulation;cursor:pointer}
 .contact-button:active{filter:brightness(1.17);transform:translateY(1px)}
 .contact-icon{font-size:clamp(14px,4.2vw,21px);line-height:1;flex:0 0 auto}
@@ -117,8 +117,27 @@ nav{padding-bottom:3px}
 .contact-button.whatsapp{background:linear-gradient(180deg,#13c365,#077638);border-color:#61e99e}
 .contact-button.email{background:linear-gradient(180deg,#318eff,#1657b0);border-color:#8cc1ff}
 .contact-button.save{background:linear-gradient(180deg,#f5f7fa,#c4d0dc);border-color:#e8eef6;color:#192437;text-shadow:none;box-shadow:inset 0 1px 0 #fff,0 2px 5px #0005}
+.contact-button.refer{background:linear-gradient(180deg,#6555a9,#342862);border-color:#9d92d4}
 #contactBar #saveCatalogue{min-width:0;min-height:0;width:100%;height:39px;padding:0 2px;display:flex;align-items:center;justify-content:center;gap:3px;letter-spacing:-.03em;font-size:clamp(9px,2.6vw,12px);border-radius:9px;white-space:nowrap}
 @media(max-width:390px){#contactBar{gap:3px;padding-left:3px;padding-right:3px}.contact-button{height:38px;gap:2px;padding:0 1px;font-size:10px}.contact-icon{font-size:15px}#contactBar #saveCatalogue{height:38px;font-size:9px;gap:2px;padding:0 1px}}
+/* Approved referral reward explained before a WhatsApp share. */
+.referral-card{background:linear-gradient(154deg,#211b42,#262039 56%,#111d34);border-color:#9786d4;max-width:410px}
+.referral-card .referral-kicker{color:#e8d3a2;font-weight:800;letter-spacing:.08em;font-size:10px;margin-bottom:8px}
+.referral-card h2{font-size:clamp(20px,5vw,25px);color:#fff;line-height:1.13}
+.referral-card strong{color:#fff}
+.referral-card .referral-tip{color:#bfd1e7;font-size:12px;margin-top:10px}
+.referral-card .refer-action{width:100%;background:linear-gradient(180deg,#23c769,#087b41);border-color:#7bedaa;color:#fff;font-weight:900;letter-spacing:.02em;margin-top:2px}
+/* Five compact, readable actions on phones: never steal page viewing space. */
+#contactBar .contact-button{height:39px;padding:0 2px;gap:2px;white-space:normal;overflow-wrap:normal;font-size:clamp(9px,2.4vw,12px)}
+#contactBar .contact-button > span:last-child{display:block;min-width:0}
+#contactBar #saveCatalogue{height:39px;white-space:normal;font-size:clamp(9px,2.35vw,11.5px)}
+#contactBar .contact-icon{font-size:clamp(12px,3vw,16px)}
+@media(max-width:480px){
+ #contactBar .contact-icon{display:none}
+ #contactBar .contact-button{font-size:clamp(9px,2.75vw,11px);padding:1px 2px;line-height:1.15}
+ #contactBar #saveCatalogue{font-size:clamp(9px,2.55vw,10.5px);line-height:1.12}
+}
+@media(max-width:360px){#contactBar{gap:3px;padding-left:3px;padding-right:3px}#contactBar .contact-button{font-size:9px}}
 @media(max-height:550px){.contact-button{height:32px}}
 </style></head><body>
 <main id="stage" aria-label="R and J catalogue pages. Swipe to turn, pinch to zoom.">
@@ -135,12 +154,24 @@ nav{padding-bottom:3px}
 <div class="scrub-unit"><div class="scrub-top"><span id="count" class="position" aria-live="polite">PAGE 1 / 118</span></div><input id="scrub" type="range" min="1" max="118" value="1" aria-label="Drag slider to turn quickly to any page" title="Slide to any page"></div>
 <button id="next" class="nav-arrow" type="button" aria-label="Next page">›</button>
 </div></nav>
-<footer id="contactBar" aria-label="R&J catalogue contact and save">
+<footer id="contactBar" aria-label="R&J catalogue contact, refer and save">
   <a class="contact-button call" href="tel:+447836776302" aria-label="Call Andy on 07836 776302"><span class="contact-icon" aria-hidden="true">☎</span><span>Call Andy</span></a>
   <a class="contact-button whatsapp" href="https://wa.me/447836776302?text=Hi%20Andy%2C%20I%27ve%20been%20looking%20through%20the%20R%26J%20Trade%20Catalogue." target="_blank" rel="noopener noreferrer" aria-label="WhatsApp Andy on 07836 776302"><span class="contact-icon" aria-hidden="true">◉</span><span>WhatsApp</span></a>
   <a class="contact-button email" href="mailto:andy.davis@rjbh.co.uk?subject=R%26J%20Trade%20Catalogue%20Enquiry" aria-label="Email Andy at andy.davis@rjbh.co.uk"><span class="contact-icon" aria-hidden="true">✉</span><span>Email</span></a>
   <button id="saveCatalogue" class="contact-button save" type="button" aria-label="Save R and J Catalogue to your phone"><span class="contact-icon" aria-hidden="true">⇩</span><span>Save Catalogue</span></button>
+  <button id="referMate" class="contact-button refer" type="button" aria-label="Refer a mate by sharing the R and J Trade Catalogue"><span class="contact-icon" aria-hidden="true">↗</span><span>Refer a Mate</span></button>
 </footer>
+<div class="backdrop" id="referDialog" role="dialog" aria-modal="true" aria-labelledby="referHeading" hidden>
+ <div class="dialog referral-card">
+  <div class="referral-kicker">R&amp;J BUILDERS HARDWARE · TRADE REWARDS</div>
+  <h2 id="referHeading">REFER A MATE — SAVE ON YOUR NEXT ORDER</h2>
+  <p><strong>10% of what your mate spends at R&amp;J is deducted from your next order.</strong></p>
+  <p class="referral-tip" style="font-size:clamp(14px,3.8vw,17px);font-weight:800;color:#e8d3a2;line-height:1.32">The more mates you send my way, the more you'll save.</p>
+  <p class="referral-tip">Share the catalogue on WhatsApp. Ask your mate to mention your name when ordering.</p>
+  <button id="referOnWhatsapp" class="refer-action" type="button">REFER ON WHATSAPP ↗</button>
+  <div class="dialog-foot"><button id="closeRefer" type="button">Back to Catalogue</button></div>
+ </div>
+</div>
 <div class="backdrop" id="picker" role="dialog" aria-modal="true" aria-labelledby="pickerTitle" hidden><div class="dialog"><h2 id="pickerTitle">Go straight to any page</h2><p>Choose a page number. The catalogue opens there instantly.</p><form class="pickline" id="jumpForm"><input id="jump" type="number" min="1" max="118" value="1" inputmode="numeric" aria-label="Enter page number" required><button type="submit">GO ›</button></form><h3>Quick page stops</h3><div id="quickGrid" class="quickgrid"></div><div class="dialog-foot"><button id="closePicker" type="button">Close</button></div></div></div>
 <div class="backdrop" id="toolDialog" role="dialog" aria-modal="true" aria-labelledby="toolsTitle" hidden><div class="dialog"><h2 id="toolsTitle">Reading tools</h2><p>Keep the catalogue full-size. Your navigation tools stay here until you need them.</p><h3>Page turn style</h3><div class="optionrow"><button id="fast" type="button" aria-pressed="false">⚡ Instant turns</button><button id="animated" type="button" aria-pressed="true">↶ Rolling pages</button></div><h3>Quick navigation</h3><div class="optionrow"><button id="back10" type="button">−10 pages</button><button id="fwd10" type="button">+10 pages</button></div><h3>Zoom</h3><div class="optionrow"><button id="minus" type="button">−</button><button id="read" type="button">2× READ</button><button id="plus" type="button">+</button><button id="fit" type="button">Fit page</button></div><div class="dialog-foot"><button id="closeTools" type="button">Done</button></div></div></div>
 <div class="backdrop" id="promoDialog" role="dialog" aria-modal="true" aria-labelledby="promoTitle" hidden><div class="dialog gift-modal"><div class="offer-kicker">R&amp;J · XR WOODSCREW BUCKETS · PAGE 59</div><h2 id="promoTitle">The XR Woodscrews Trade Offer</h2><div class="offer-old">Was <s>£16.50</s> per tub</div><div class="offer-price">£14.99 <small>per tub</small></div><div class="offer-ribbon">EVERY 12 TUBS · CHOOSE ONE FREE</div><div class="gift-item"><b>OPTION 1</b> — 2 extra tubs FREE</div><div class="gift-item"><b>OPTION 2</b> — Code 65265 · 780 × 300 × 500 mm aluminium worktop FREE</div><div class="gift-item"><b>OPTION 3</b> — 3 bottles of quality Italian wine FREE</div><p style="margin-top:12px">Choose whichever free gift suits you best with every 12 tubs.</p><div class="dialog-foot"><button id="closePromo" type="button">Back to page 59</button></div></div></div>
@@ -481,6 +512,18 @@ async function saveCatalogue(){
   }catch(err){showInstallGuide();}
  }else showInstallGuide();
 }
+// Refer a Mate: referrer saves 10% of a mate's spend on their next order.
+const referralUrl='https://andywdavis.github.io/';
+const referDialog=document.getElementById('referDialog');
+const referralText="Thought you might find the R&J Builders Hardware Trade Catalogue useful! Have a look here: "+referralUrl+"\n\nIf you place an order, please mention my name to Andy on 07836 776302 so he knows I referred you. Thanks!";
+document.getElementById('referMate').addEventListener('click',()=>{referDialog.hidden=false;});
+document.getElementById('closeRefer').addEventListener('click',()=>{referDialog.hidden=true;});
+referDialog.addEventListener('click',e=>{if(e.target===referDialog)referDialog.hidden=true});
+window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!referDialog.hidden)referDialog.hidden=true});
+document.getElementById('referOnWhatsapp').addEventListener('click',()=>{
+ // The WhatsApp chat picker opens with a message ready for the user to send.
+ window.open('https://wa.me/?text='+encodeURIComponent(referralText),'_blank','noopener,noreferrer');
+});
 document.getElementById('saveCatalogue').addEventListener('click',saveCatalogue);
 installNow.addEventListener('click',saveCatalogue);
 document.getElementById('closeInstall').addEventListener('click',()=>installModal.hidden=true);
