@@ -107,6 +107,32 @@ button:active:not(:disabled){filter:brightness(1.15)}
 .install-card p,.install-card li{font-size:13px;line-height:1.4}
 .install-card button{min-height:38px}
 
+/* Illustrated iPhone Safari save guide: match the modern compact bottom toolbar.
+   The website cannot touch native Safari buttons, but the very first tap is unmistakable. */
+.iphone-save-visual[hidden]{display:none}
+.iphone-save-visual{margin:11px 0 7px;background:#f3f7fd;border:1px solid #c4d5e8;border-radius:13px;padding:10px 11px 8px;color:#13253c;box-shadow:inset 0 1px #fff}
+.iphone-save-step-one{display:flex;align-items:center;gap:10px}
+.iphone-save-number{display:flex;justify-content:center;align-items:center;flex:0 0 30px;height:30px;background:#b3081b;color:white;border-radius:50%;font-size:18px;font-weight:950}
+.iphone-save-step-one div{flex:1;min-width:0}
+.iphone-save-step-one strong{display:block;font-size:clamp(13px,3.7vw,17px);font-weight:950;letter-spacing:-.02em;line-height:1.12}
+.iphone-save-step-one div span{display:block;font-size:11px;line-height:1.2;margin-top:3px;color:#3c5066;font-weight:800}
+.iphone-save-big-more{font-size:25px;letter-spacing:1px;color:#b3081b;font-weight:1000;line-height:1}
+.iphone-safari-demo{display:flex;align-items:center;gap:8px;background:#172536;border-radius:25px;padding:5px 6px 5px 12px;margin-top:12px;color:white;min-height:43px}
+.iphone-safari-back{font:800 28px/1 system-ui;color:#e8f0f9}
+.iphone-safari-url{display:flex;align-items:center;justify-content:center;flex:1;min-width:0;background:#32475e;color:#f8fbff;border-radius:22px;height:33px;font-size:12px;white-space:nowrap;font-weight:700;overflow:hidden}
+.iphone-safari-more{display:flex;align-items:center;justify-content:center;flex:0 0 51px;height:35px;border-radius:22px;background:#ffe17c;border:2px solid #c81528;color:#151c29;box-shadow:0 0 0 2px #fff;font-size:16px;font-weight:1000;letter-spacing:0}
+.iphone-save-point{display:flex;align-items:center;justify-content:flex-end;gap:4px;color:#a8091a;font-size:11px;font-weight:950;letter-spacing:.06em;margin:3px 11px 0 0}
+.iphone-save-point span:last-child{font-size:20px;line-height:1;transform:translateY(-2px)}
+#installDialog.iphone-saving .install-card h2{font-size:19px;margin-bottom:3px}
+#installDialog.iphone-saving .install-card{padding:13px 15px max(17px,env(safe-area-inset-bottom));max-height:min(82dvh,620px)}
+#installDialog.iphone-saving .install-card p{margin:6px 0;font-size:12px;line-height:1.35}
+#installDialog.iphone-saving #installSteps{margin:8px 0 0;padding-left:25px}
+#installDialog.iphone-saving #installSteps li{margin:7px 0;font-size:13px;line-height:1.32;font-weight:700}
+#installDialog.iphone-saving #installSteps b{color:#ffe592}
+#installDialog.iphone-saving #closeInstall{margin-top:7px}
+#installDialog.iphone-saving .iphone-save-alternate{color:#c5d8f2;font-size:11px;margin:8px 0 2px;line-height:1.25}
+.iphone-save-alternate[hidden]{display:none}
+@media(max-height:620px){#installDialog.iphone-saving .install-card{max-height:78dvh}.iphone-safari-demo{margin-top:6px}.iphone-save-visual{margin:6px 0 4px}}
 /* Fixed five-action contact bar, separate from every printed catalogue page. */
 nav{padding-bottom:3px}
 #contactBar{flex:0 0 auto;z-index:11;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;padding:5px 5px max(6px,env(safe-area-inset-bottom));background:linear-gradient(180deg,#0f1926,#080f1a);border-top:1px solid #35465c;box-shadow:0 -1px 10px #0005;width:100%}
@@ -191,9 +217,15 @@ nav{padding-bottom:3px}
 <div id="saveNotice" class="save-notice" role="status" aria-live="polite" hidden></div>
 <div id="installDialog" class="install-sheet" role="dialog" aria-modal="true" aria-labelledby="installHeading" hidden>
  <section class="install-card">
- <h2 id="installHeading">Save R&J to your phone</h2>
+ <h2 id="installHeading">Save R&J Catalogue to your phone</h2>
  <p id="installIntro">Keep the catalogue one tap away on your phone.</p>
+ <div id="iphoneSaveVisual" class="iphone-save-visual" hidden aria-label="Safari iPhone instructions: press the three dots at the bottom right of the browser">
+  <div class="iphone-save-step-one"><span class="iphone-save-number">1</span><div><strong>TAP THE THREE DOTS</strong><span>Bottom-right corner of Safari</span></div><span class="iphone-save-big-more" aria-hidden="true">•••</span></div>
+  <div class="iphone-safari-demo" aria-hidden="true"><span class="iphone-safari-back">‹</span><span class="iphone-safari-url">▣ &nbsp; rj catalogue &nbsp; ↻</span><span class="iphone-safari-more">•••</span></div>
+  <div class="iphone-save-point"><span>LOOK HERE</span><span aria-hidden="true">↗</span></div>
+ </div>
  <ol id="installSteps"></ol>
+ <p id="installSafariAlt" class="iphone-save-alternate" hidden>Already see the Share ⤴ icon in Safari? Tap that instead of •••.</p>
  <button id="installNow" type="button" hidden>Install R&J Catalogue</button>
  <p id="installResult" class="status" role="status" aria-live="polite"></p>
  <button id="closeInstall" type="button">Close</button>
@@ -496,12 +528,21 @@ function showInstallGuide(message=''){
  installResult.textContent=message;
  installNow.hidden=!deferredInstallEvent;
  const iphone=/iPhone|iPad|iPod/i.test(navigator.userAgent);
+ const visual=document.getElementById('iphoneSaveVisual');
+ const alternative=document.getElementById('installSafariAlt');
+ installSteps.start=1;
+ alternative.hidden=true;
+ installModal.classList.toggle('iphone-saving',iphone&&!isOnHomeScreen());
+ visual.hidden=true;
  if(isOnHomeScreen()){
-  installIntro.textContent='This catalogue is already open from your home screen.';
+  installIntro.textContent='Already saved! The R&J icon is on your Home Screen.';
   installSteps.innerHTML='';installNow.hidden=true;
  }else if(iphone){
-  installIntro.textContent='Open this live catalogue in Safari, then:';
-  installSteps.innerHTML='<li>Tap Share (square with arrow) or the Safari menu.</li><li>Choose Add to Home Screen, then Add.</li>';
+  installIntro.textContent='Save the R&J Catalogue icon to your iPhone in just a few taps:';
+  visual.hidden=false;
+  alternative.hidden=false;
+  installSteps.start=2;
+  installSteps.innerHTML='<li>In the menu, tap <b>Share</b> (square with upward arrow).</li><li>Scroll to <b>Add to Home Screen</b>, then tap <b>Add</b>.</li>';
   installNow.hidden=true;
  }else{
   installIntro.textContent='Use Install if available, otherwise save this page from your browser:';
