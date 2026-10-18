@@ -127,6 +127,14 @@ nav{padding-bottom:3px}
 .referral-card strong{color:#fff}
 .referral-card .referral-tip{color:#bfd1e7;font-size:12px;margin-top:10px}
 .referral-card .refer-action{width:100%;background:linear-gradient(180deg,#23c769,#087b41);border-color:#7bedaa;color:#fff;font-weight:900;letter-spacing:.02em;margin-top:2px}
+/* Unique referral reference inside the existing popup; slim footer is unchanged. */
+.referral-card .referral-label{display:block;color:#e7eef9;font-size:12px;font-weight:800;margin:8px 0 5px}
+.referral-card .referral-name{width:100%;height:43px;box-sizing:border-box;border:1px solid #8f9ab9;border-radius:9px;background:#f8fbff;color:#101b2b;font-size:16px;font-weight:700;padding:8px 11px}
+.referral-card .referral-name:focus{outline:3px solid #a5d2fa;outline-offset:1px}
+.referral-card .referral-code-label{color:#c8d9ea;font-weight:700;font-size:11px;margin:10px 0 3px}
+.referral-card .referral-code{font-variant-numeric:tabular-nums;letter-spacing:.09em;font-size:21px;font-weight:950;color:#fff;line-height:1.2;margin:1px 0 6px}
+.referral-card .referral-note{font-size:11px;color:#c7d7e8;line-height:1.4;margin:4px 0 9px}
+.referral-card .referral-error{color:#ffe38f;font-size:12px;font-weight:800;margin:4px 0 5px}
 /* Five compact, readable actions on phones: never steal page viewing space. */
 #contactBar .contact-button{height:39px;padding:0 2px;gap:2px;white-space:normal;overflow-wrap:normal;font-size:clamp(9px,2.4vw,12px)}
 #contactBar .contact-button > span:last-child{display:block;min-width:0}
@@ -165,10 +173,15 @@ nav{padding-bottom:3px}
  <div class="dialog referral-card">
   <div class="referral-kicker">R&amp;J BUILDERS HARDWARE · TRADE REWARDS</div>
   <h2 id="referHeading">REFER A MATE — SAVE ON YOUR NEXT ORDER</h2>
-  <p><strong>10% of what your mate spends at R&amp;J is deducted from your next order.</strong></p>
+  <p><strong>10% of what your mate spends on their first R&amp;J order is deducted from your next order.</strong></p>
   <p class="referral-tip" style="font-size:clamp(14px,3.8vw,17px);font-weight:800;color:#e8d3a2;line-height:1.32">The more mates you send my way, the more you'll save.</p>
-  <p class="referral-tip">Share the catalogue on WhatsApp. Ask your mate to mention your name when ordering.</p>
-  <button id="referOnWhatsapp" class="refer-action" type="button">REFER ON WHATSAPP ↗</button>
+  <label class="referral-label" for="referName">Your name or business</label>
+  <input id="referName" class="referral-name" type="text" placeholder="So Andy knows who to reward" maxlength="60" autocomplete="name" aria-describedby="referNote">
+  <div class="referral-code-label">UNIQUE REFERRAL REFERENCE</div>
+  <div id="referCode" class="referral-code" aria-live="polite">RJ-········</div>
+  <p id="referNote" class="referral-note">Your code and name are added to the WhatsApp message and catalogue link. Your mate quotes the code on their first order.</p>
+  <p id="referError" class="referral-error" aria-live="polite" hidden></p>
+  <button id="referOnWhatsapp" class="refer-action" type="button">SEND REFERRAL ON WHATSAPP ↗</button>
   <div class="dialog-foot"><button id="closeRefer" type="button">Back to Catalogue</button></div>
  </div>
 </div>
@@ -512,18 +525,98 @@ async function saveCatalogue(){
   }catch(err){showInstallGuide();}
  }else showInstallGuide();
 }
-// Refer a Mate: referrer saves 10% of a mate's spend on their next order.
+// Referral references: one difficult-to-guess code per recommendation.
+// This is manual attribution via a quoted code, NOT server-side tracking or automatic rewards.
 const referralUrl='https://andywdavis.github.io/';
 const referDialog=document.getElementById('referDialog');
-const referralText="Thought you might find the R&J Builders Hardware Trade Catalogue useful! Have a look here: "+referralUrl+"\n\nIf you place an order, please mention my name to Andy on 07836 776302 so he knows I referred you. Thanks!";
-document.getElementById('referMate').addEventListener('click',()=>{referDialog.hidden=false;});
+const referNameInput=document.getElementById('referName');
+const referCodeDisplay=document.getElementById('referCode');
+const referError=document.getElementById('referError');
+const REF_NAME_KEY='rj_referring_customer_name_v1';
+const RECEIVED_REF_KEY='rj_received_ref_v1';
+const REF_HISTORY_KEY='rj_referral_codes_created_v1';
+let currentShareCode='';
+function readStored(key){try{return localStorage.getItem(key)||''}catch(_){return ''}}
+function writeStored(key,value){try{localStorage.setItem(key,value)}catch(_){}}
+function cleanName(value){return String(value||'').replace(/\s+/g,' ').trim().slice(0,60)}
+function createReferralCode(){
+ const abc='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+ const b=new Uint8Array(8);
+ if(window.crypto && crypto.getRandomValues)crypto.getRandomValues(b);
+ else{for(let i=0;i<b.length;i++)b[i]=Math.floor(Math.random()*256)}
+ return 'RJ-'+Array.from(b,x=>abc[x%abc.length]).join('');
+}
+function createShareLink(code,from){
+ const url=new URL(referralUrl);
+ url.searchParams.set('rjref',code);
+ url.searchParams.set('rjby',from);
+ return url.toString();
+}
+// Store the reference when a mate arrives from WhatsApp, so the code survives
+// when they later browse, save the catalogue or message Andy.
+const incomingQuery=new URLSearchParams(location.search);
+const incomingCode=(incomingQuery.get('rjref')||'').trim().toUpperCase();
+const incomingFrom=cleanName(incomingQuery.get('rjby'));
+if(/^RJ-[A-HJ-NP-Z2-9]{8}$/.test(incomingCode)){
+ writeStored(RECEIVED_REF_KEY,JSON.stringify({code:incomingCode,from:incomingFrom}));
+}
+function receivedReferral(){
+ try{
+  const item=JSON.parse(readStored(RECEIVED_REF_KEY));
+  if(item && /^RJ-[A-HJ-NP-Z2-9]{8}$/.test(item.code))return item;
+ }catch(_){ }
+ return null;
+}
+function showReferralDialog(){
+ currentShareCode=createReferralCode();
+ referCodeDisplay.textContent=currentShareCode;
+ referNameInput.value=readStored(REF_NAME_KEY);
+ referError.hidden=true;
+ referDialog.hidden=false;
+}
+document.getElementById('referMate').addEventListener('click',showReferralDialog);
 document.getElementById('closeRefer').addEventListener('click',()=>{referDialog.hidden=true;});
 referDialog.addEventListener('click',e=>{if(e.target===referDialog)referDialog.hidden=true});
 window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!referDialog.hidden)referDialog.hidden=true});
 document.getElementById('referOnWhatsapp').addEventListener('click',()=>{
- // The WhatsApp chat picker opens with a message ready for the user to send.
- window.open('https://wa.me/?text='+encodeURIComponent(referralText),'_blank','noopener,noreferrer');
+ const name=cleanName(referNameInput.value);
+ if(!name){
+  referError.textContent='Please enter your name or business so Andy knows who to credit.';
+  referError.hidden=false;
+  referNameInput.focus();
+  return;
+ }
+ referError.hidden=true;
+ writeStored(REF_NAME_KEY,name);
+ const code=currentShareCode||createReferralCode();
+ const link=createShareLink(code,name);
+ const message='Hi! I thought you might find the R&J Builders Hardware Trade Catalogue useful.\n\n'+link+'\n\nReferral reference: '+code+'\nRecommended by: '+name+'\n\nIf you place your first order, please quote this reference to Andy (07836 776302), so he can credit my referral. Thanks!';
+ try{
+  const history=JSON.parse(readStored(REF_HISTORY_KEY)||'[]');
+  if(Array.isArray(history)){
+   history.unshift({code:code,from:name,date:new Date().toISOString()});
+   writeStored(REF_HISTORY_KEY,JSON.stringify(history.slice(0,80)));
+  }
+ }catch(_){writeStored(REF_HISTORY_KEY,JSON.stringify([{code:code,from:name,date:new Date().toISOString()}]));}
+ // User chooses a recipient and presses Send in WhatsApp; nothing is sent secretly.
+ window.open('https://wa.me/?text='+encodeURIComponent(message),'_blank','noopener,noreferrer');
+ referDialog.hidden=true;
 });
+// A mate following the unique link carries the code into their own enquiry.
+const incomingReferral=receivedReferral();
+if(incomingReferral){
+ const where='\nReferral reference: '+incomingReferral.code+(incomingReferral.from?'\nRecommended by: '+incomingReferral.from:'');
+ const waLink=document.querySelector('#contactBar .contact-button.whatsapp');
+ if(waLink){
+  const msg="Hi Andy, I've been looking through the R&J Trade Catalogue."+where;
+  waLink.href='https://wa.me/447836776302?text='+encodeURIComponent(msg);
+ }
+ const emailLink=document.querySelector('#contactBar .contact-button.email');
+ if(emailLink){
+  const sub='R&J Trade Catalogue Enquiry';
+  emailLink.href='mailto:andy.davis@rjbh.co.uk?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent('Hi Andy,'+where+'\n\n');
+ }
+}
 document.getElementById('saveCatalogue').addEventListener('click',saveCatalogue);
 installNow.addEventListener('click',saveCatalogue);
 document.getElementById('closeInstall').addEventListener('click',()=>installModal.hidden=true);
