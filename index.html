@@ -184,9 +184,9 @@ nav{padding-bottom:3px}
 </button>
 </div><span id="notice"></span><span id="hint">Swipe pages · Pinch to zoom</span></main>
 <nav aria-label="Catalogue page navigation"><div class="nav-strip">
-<button id="prev" class="nav-arrow" type="button" aria-label="Previous page">‹</button>
+<button id="prev" class="nav-arrow" type="button" aria-label="Tap once for previous page; hold to turn continuously — Previous page">‹</button>
 <div class="scrub-unit"><div class="scrub-top"><span id="count" class="position" aria-live="polite">PAGE 1 / 118</span></div><input id="scrub" type="range" min="1" max="118" value="1" aria-label="Drag slider to turn quickly to any page" title="Slide to any page"></div>
-<button id="next" class="nav-arrow" type="button" aria-label="Next page">›</button>
+<button id="next" class="nav-arrow" type="button" aria-label="Tap once for next page; hold to turn continuously — Next page">›</button>
 </div></nav>
 <footer id="contactBar" aria-label="R&J catalogue contact, refer and save">
   <a class="contact-button call" href="tel:+447836776302" aria-label="Call Andy on 07836 776302"><span class="contact-icon" aria-hidden="true">☎</span><span>Call Andy</span></a>
@@ -436,31 +436,110 @@ function imageLoaded(uri){return new Promise((resolve,reject)=>{
  im.src=uri;
  if(im.complete&&im.naturalWidth)resolve(im);
 })}
-async function turn(n){
- if(n<FIRST||n>LAST||busy||n===current)return;
+function cssPaperTurn(old,n,duration,onComplete){
+ // Stable fallback for Samsung/Android devices without working WebGL or 2D canvas.
+ // The old sheet visibly folds away over the new one and fully resets at the end.
+ const under=$('nextPage'),oldSheet=$('current');
+ targetImg.src=src(n);ff.src=src(old);fb.src=src(n);
+ under.style.display='block';under.style.zIndex='2';oldSheet.style.visibility='hidden';
+ leaf.className=(n>old?'flipForward':'flipBackward');
+ leaf.style.display='block';
+ leaf.style.animationDuration=Math.max(240,Math.min(720,duration))+'ms';
+ const finish=()=>{
+  clearTimeout(animationTimer);animationTimer=null;
+  oldSheet.style.visibility='';
+  direct(n);
+  if(typeof onComplete==='function')onComplete();
+ };
+ // Animation duration is explicitly bounded; stale styles cannot persist after release.
+ animationTimer=setTimeout(finish,Math.max(240,Math.min(720,duration))+50);
+}
+async function turn(n,options={}){
+ if(n<FIRST||n>LAST||busy||n===current)return false;
  const diff=n-current;
- if(Math.abs(diff)!==1||zoom>1||instantTurns||window.matchMedia('(prefers-reduced-motion:reduce)').matches){direct(n);return}
- busy=true;const token=++curlToken,old=current;
+ const forceCurl=options.forceCurl===true;
+ const whenDone=()=>{if(typeof options.onComplete==='function')options.onComplete()};
+ if(Math.abs(diff)!==1||zoom>1||(instantTurns&&!forceCurl)||window.matchMedia('(prefers-reduced-motion:reduce)').matches){direct(n);whenDone();return true}
+ busy=true;book.classList.remove('riffling');const token=++curlToken,old=current;
  try{
   const [a,b]=await Promise.all([imageLoaded(src(old)),imageLoaded(src(n))]);
-  if(token!==curlToken)return;
-  if(!curlGpu.prepare(a,b))throw Error('GPU page curl unavailable');
+  if(token!==curlToken)return false;
+  if(!curlGpu.prepare(a,b)){cssPaperTurn(old,n,options.duration||470,whenDone);return true;}
   $('page59Offer').style.display='none';curlCanvas.style.display='block';
-  const started=performance.now(),duration=960,dir=diff>0?1:-1;
+  const started=performance.now(),duration=options.duration||960,dir=diff>0?1:-1;
   const tick=now=>{
    if(token!==curlToken)return;
    const linear=Math.min(1,(now-started)/duration);
-   // The page leaves gently, accelerates through the roll, then settles softly.
-   const t=linear<.4?2.6*linear*linear:1-Math.pow(1-linear,1.7);
+   // Page accelerates, rolls over its neighbour and rests FLAT after every turn.
+   const t=linear<.5?2*linear*linear:1-2*(1-linear)*(1-linear);
    curlGpu.draw(Math.max(.0001,Math.min(.9999,t)),dir);
-   if(linear<1){curlRAF=requestAnimationFrame(tick)}else{curlRAF=null;direct(n)}
+   if(linear<1){curlRAF=requestAnimationFrame(tick)}else{
+    curlRAF=null;direct(n);whenDone();
+   }
   };
   curlRAF=requestAnimationFrame(tick);
- }catch(error){console.warn('Falling back to direct turn',error);if(token===curlToken)direct(n)}
+ }catch(error){console.warn('Using paper flip fallback',error);if(token===curlToken){cssPaperTurn(old,n,options.duration||470,whenDone)}}
+ return true;
 }
 function fast(on){instantTurns=on;$('fast').classList.toggle('active',on);$('animated').classList.toggle('active',!on);$('fast').setAttribute('aria-pressed',String(on));$('animated').setAttribute('aria-pressed',String(!on));try{localStorage.setItem('rjRollTurnFast',on?'1':'0')}catch(e){}}
 function modal(id,show){$(id).hidden=!show}
-$('prev').addEventListener('click',()=>turn(current-1));$('next').addEventListener('click',()=>turn(current+1));
+/* A held arrow turns the SAME animated paper as an ordinary click, page after page.
+   The slider remains instant. Releasing the arrow stops the queue, and the active
+   page is allowed to settle completely flat before the reader becomes idle. */
+let navHoldTimer=null,navHoldActive=false,navSuppressClick=false,navDirection=0,holdPointerId=null;
+let navHeldElement=null,navRepeatScheduled=false;
+function endNavHold(){
+ clearTimeout(navHoldTimer);navHoldTimer=null;
+ navHoldActive=false;navDirection=0;
+ if(navHeldElement&&holdPointerId!==null){
+   try{if(navHeldElement.hasPointerCapture(holdPointerId))navHeldElement.releasePointerCapture(holdPointerId)}catch(e){}
+ }
+ holdPointerId=null;navHeldElement=null;
+ book.classList.remove('riffling');
+}
+function advanceHeldPages(){
+ navRepeatScheduled=false;
+ if(!navHoldActive||!navDirection)return;
+ if(busy){ // finish the current actual curved page before starting the next one
+   if(!navRepeatScheduled){navRepeatScheduled=true;requestAnimationFrame(advanceHeldPages)}
+   return;
+ }
+ const to=current+navDirection;
+ if(to<FIRST||to>LAST){endNavHold();return;}
+ turn(to,{duration:465,forceCurl:true,onComplete:()=>{
+   book.classList.remove('riffling');
+   if(navHoldActive&&navDirection&&!navRepeatScheduled){
+      navRepeatScheduled=true;requestAnimationFrame(advanceHeldPages);
+   }
+ }});
+}
+function attachHoldNav(el,direction){
+ el.addEventListener('pointerdown',ev=>{
+  if(ev.button!==0&&ev.pointerType!=='touch')return;
+  if(el.disabled)return;
+  endNavHold();navSuppressClick=false;navDirection=direction;
+  navHeldElement=el;holdPointerId=ev.pointerId;
+  // Capture immediately; waiting until after long-press loses Android pointers.
+  try{el.setPointerCapture(ev.pointerId)}catch(e){}
+  navHoldTimer=setTimeout(()=>{
+   navHoldTimer=null;
+   navHoldActive=true;navSuppressClick=true;
+   advanceHeldPages();
+  },260);
+ });
+ for(const type of ['pointerup','pointercancel','lostpointercapture'])el.addEventListener(type,endNavHold);
+ el.addEventListener('contextmenu',ev=>ev.preventDefault());
+ el.addEventListener('dragstart',ev=>ev.preventDefault());
+ el.addEventListener('click',ev=>{
+  if(navSuppressClick){ev.preventDefault();ev.stopImmediatePropagation();navSuppressClick=false;return;}
+  turn(current+direction);
+ });
+}
+attachHoldNav($('prev'),-1);attachHoldNav($('next'),1);
+window.addEventListener('blur',endNavHold);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)endNavHold()});
+
+
 let scrubLastPaint=0,scrubTimer=null,scrubHold=null,scrubWanted=null;
 function scrubShow(n){
  if(!Number.isInteger(n)||n<FIRST||n>LAST)return;
