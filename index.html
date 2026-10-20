@@ -35,7 +35,7 @@ nav{flex:0 0 auto;background:linear-gradient(180deg,#162334,#0c1420);border-top:
 button{font-family:inherit;cursor:pointer;touch-action:manipulation;user-select:none;appearance:none;-webkit-appearance:none}
 button:disabled{opacity:.55;cursor:default}
 .nav-arrow{flex:0 0 38px;min-width:0;height:36px;border:1px solid #667b90;border-radius:8px;background:linear-gradient(180deg,#34455a,#1b2839);color:#fff;font-weight:700;font-size:21px;line-height:1;text-shadow:0 1px 1px #0008}
-#prev,#next{background:linear-gradient(180deg,#ffffff 0%,#edf3fa 24%,#b9c9dc 100%);border-color:#dfe8f2;color:#1a2532;text-shadow:none;box-shadow:inset 0 1px 0 #ffffffd9,0 1px 4px #0006;font-weight:850}
+#prev,#next{touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;background:linear-gradient(180deg,#ffffff 0%,#edf3fa 24%,#b9c9dc 100%);border-color:#dfe8f2;color:#1a2532;text-shadow:none;box-shadow:inset 0 1px 0 #ffffffd9,0 1px 4px #0006;font-weight:850}
 .scrub-unit{display:flex;flex:1;min-width:0;flex-direction:column;justify-content:center;gap:1px;height:100%}
 .scrub-top{display:flex;align-items:center;justify-content:space-between;gap:3px;font-size:11px;font-weight:780;white-space:nowrap;color:#e7edf5;min-height:16px}
 .scrub-top .position{font-variant-numeric:tabular-nums;letter-spacing:.04em}
@@ -173,6 +173,8 @@ nav{padding-bottom:3px}
 }
 @media(max-width:360px){#contactBar{gap:3px;padding-left:3px;padding-right:3px}#contactBar .contact-button{font-size:9px}}
 @media(max-height:550px){.contact-button{height:32px}}
+#prev.rapid-turn,#next.rapid-turn{background:linear-gradient(180deg,#def7ff,#5ca9ff);box-shadow:0 0 10px #58aaff, inset 0 1px 1px #fff;color:#091a32}
+.scrub-top::after{content:'HOLD ARROWS = FAST';color:#cfe0f8;font-weight:800;font-size:9px;letter-spacing:.03em}
 </style></head><body>
 <main id="stage" aria-label="R and J catalogue pages. Swipe to turn, pinch to zoom.">
 <div id="book">
@@ -184,9 +186,9 @@ nav{padding-bottom:3px}
 </button>
 </div><span id="notice"></span><span id="hint">Swipe pages · Pinch to zoom</span></main>
 <nav aria-label="Catalogue page navigation"><div class="nav-strip">
-<button id="prev" class="nav-arrow" type="button" aria-label="Tap once for previous page; hold to turn continuously — Previous page">‹</button>
+<button id="prev" class="nav-arrow" type="button" aria-label="Tap once for previous page; hold to turn continuously — Previous page">«</button>
 <div class="scrub-unit"><div class="scrub-top"><span id="count" class="position" aria-live="polite">PAGE 1 / 118</span></div><input id="scrub" type="range" min="1" max="118" value="1" aria-label="Drag slider to turn quickly to any page" title="Slide to any page"></div>
-<button id="next" class="nav-arrow" type="button" aria-label="Tap once for next page; hold to turn continuously — Next page">›</button>
+<button id="next" class="nav-arrow" type="button" aria-label="Tap once for next page; hold to turn continuously — Next page">»</button>
 </div></nav>
 <footer id="contactBar" aria-label="R&J catalogue contact, refer and save">
   <a class="contact-button call" href="tel:+447836776302" aria-label="Call Andy on 07836 776302"><span class="contact-icon" aria-hidden="true">☎</span><span>Call Andy</span></a>
@@ -483,62 +485,80 @@ async function turn(n,options={}){
 }
 function fast(on){instantTurns=on;$('fast').classList.toggle('active',on);$('animated').classList.toggle('active',!on);$('fast').setAttribute('aria-pressed',String(on));$('animated').setAttribute('aria-pressed',String(!on));try{localStorage.setItem('rjRollTurnFast',on?'1':'0')}catch(e){}}
 function modal(id,show){$(id).hidden=!show}
-/* A held arrow turns the SAME animated paper as an ordinary click, page after page.
-   The slider remains instant. Releasing the arrow stops the queue, and the active
-   page is allowed to settle completely flat before the reader becomes idle. */
-let navHoldTimer=null,navHoldActive=false,navSuppressClick=false,navDirection=0,holdPointerId=null;
-let navHeldElement=null,navRepeatScheduled=false;
-function endNavHold(){
- clearTimeout(navHoldTimer);navHoldTimer=null;
- navHoldActive=false;navDirection=0;
- if(navHeldElement&&holdPointerId!==null){
-   try{if(navHeldElement.hasPointerCapture(holdPointerId))navHeldElement.releasePointerCapture(holdPointerId)}catch(e){}
- }
- holdPointerId=null;navHeldElement=null;
+/* Reliable mobile navigation: a short tap turns one page with its usual animation.
+   A held arrow skims pages rapidly without queueing expensive page-curl animations.
+   Touch events are handled explicitly to avoid Android long-press pointer cancellation. */
+let pressActive=false, pressDirection=0, pressRepeated=false;
+let pressDelay=null, pressTicker=null, pressElement=null;
+function stopPress(doSingleTap=false){
+ if(!pressActive)return;
+ const step=pressDirection;
+ const single=doSingleTap && !pressRepeated;
+ clearTimeout(pressDelay);clearInterval(pressTicker);
+ pressDelay=null;pressTicker=null;
+ pressActive=false;pressDirection=0;pressRepeated=false;
+ if(pressElement){pressElement.classList.remove('rapid-turn');pressElement=null;}
  book.classList.remove('riffling');
+ if(single && current+step>=FIRST && current+step<=LAST)turn(current+step);
 }
-function advanceHeldPages(){
- navRepeatScheduled=false;
- if(!navHoldActive||!navDirection)return;
- if(busy){ // finish the current actual curved page before starting the next one
-   if(!navRepeatScheduled){navRepeatScheduled=true;requestAnimationFrame(advanceHeldPages)}
-   return;
- }
- const to=current+navDirection;
- if(to<FIRST||to>LAST){endNavHold();return;}
- turn(to,{duration:465,forceCurl:true,onComplete:()=>{
-   book.classList.remove('riffling');
-   if(navHoldActive&&navDirection&&!navRepeatScheduled){
-      navRepeatScheduled=true;requestAnimationFrame(advanceHeldPages);
-   }
- }});
+function rapidStep(){
+ if(!pressActive || !pressRepeated)return;
+ const target=current+pressDirection;
+ if(target<FIRST || target>LAST){stopPress();return;}
+ // Reset any pending animation so the held navigation cannot stall behind it.
+ direct(target);
+ book.classList.add('riffling');
 }
-function attachHoldNav(el,direction){
- el.addEventListener('pointerdown',ev=>{
-  if(ev.button!==0&&ev.pointerType!=='touch')return;
-  if(el.disabled)return;
-  endNavHold();navSuppressClick=false;navDirection=direction;
-  navHeldElement=el;holdPointerId=ev.pointerId;
-  // Capture immediately; waiting until after long-press loses Android pointers.
-  try{el.setPointerCapture(ev.pointerId)}catch(e){}
-  navHoldTimer=setTimeout(()=>{
-   navHoldTimer=null;
-   navHoldActive=true;navSuppressClick=true;
-   advanceHeldPages();
-  },260);
+function startPress(el,step){
+ if(el.disabled)return;
+ stopPress();
+ pressActive=true;pressDirection=step;pressRepeated=false;pressElement=el;
+ pressDelay=setTimeout(()=>{
+  if(!pressActive)return;
+  pressRepeated=true;el.classList.add('rapid-turn');
+  rapidStep();pressTicker=setInterval(rapidStep,115);
+ },280);
+}
+function wireNavArrow(el,step){
+ // Touch gestures: explicitly prevent long-press text selection, context menu,
+ // touch-to-pointer cancellation and synthetic click double navigation.
+ el.addEventListener('touchstart',event=>{
+  if(event.touches.length!==1)return;
+  event.preventDefault();startPress(el,step);
+ },{passive:false});
+ el.addEventListener('touchend',event=>{event.preventDefault();stopPress(true);},{passive:false});
+ el.addEventListener('touchcancel',()=>stopPress(),{passive:true});
+ // Desktop mouse / stylus: one shared implementation with the touch path.
+ el.addEventListener('pointerdown',event=>{
+  if(event.pointerType==='touch'||event.button!==0)return;
+  startPress(el,step);
+  try{el.setPointerCapture(event.pointerId)}catch(_e){}
  });
- for(const type of ['pointerup','pointercancel','lostpointercapture'])el.addEventListener(type,endNavHold);
- el.addEventListener('contextmenu',ev=>ev.preventDefault());
- el.addEventListener('dragstart',ev=>ev.preventDefault());
- el.addEventListener('click',ev=>{
-  if(navSuppressClick){ev.preventDefault();ev.stopImmediatePropagation();navSuppressClick=false;return;}
-  turn(current+direction);
+ el.addEventListener('pointerup',event=>{
+  if(event.pointerType==='touch')return;
+  stopPress(true);
  });
+ el.addEventListener('pointercancel',event=>{
+  if(event.pointerType==='touch')return;
+  stopPress();
+ });
+ // Click is synthesized after taps by some mobile browsers; our handlers
+ // have already performed the navigation.
+ el.addEventListener('click',event=>{event.preventDefault();event.stopImmediatePropagation();});
+ el.addEventListener('keydown',event=>{
+  if(event.key==='Enter'||event.key===' '){
+   event.preventDefault();
+   if(current+step>=FIRST&&current+step<=LAST)turn(current+step);
+  }
+ });
+ el.addEventListener('contextmenu',event=>event.preventDefault());
+ el.addEventListener('dragstart',event=>event.preventDefault());
 }
-attachHoldNav($('prev'),-1);attachHoldNav($('next'),1);
-window.addEventListener('blur',endNavHold);
-document.addEventListener('visibilitychange',()=>{if(document.hidden)endNavHold()});
-
+wireNavArrow($('prev'),-1);wireNavArrow($('next'),1);
+document.addEventListener('touchend',()=>stopPress(true));
+document.addEventListener('touchcancel',()=>stopPress());
+window.addEventListener('blur',()=>stopPress());
+document.addEventListener('visibilitychange',()=>{if(document.hidden)stopPress()});
 
 let scrubLastPaint=0,scrubTimer=null,scrubHold=null,scrubWanted=null;
 function scrubShow(n){
