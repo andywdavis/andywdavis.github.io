@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes,viewport-fit=cover"><meta name="theme-color" content="#101923"><meta name="application-name" content="R&J South Wales Trade Catalogue"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="R&J South Wales"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"><link rel="apple-touch-icon" sizes="180x180" href="icon-180.png"><title>R&J SOUTH WALES PLATINUM CATALOGUE | 118-PAGE TEST</title>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes,viewport-fit=cover"><meta name="theme-color" content="#101923"><meta name="application-name" content="R&J South Wales Trade Catalogue"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="R&J South Wales"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"><link rel="apple-touch-icon" sizes="180x180" href="icon-180.png"><title>R&amp;J South Wales Platinum Catalogue — Andy</title><meta property="og:type" content="website"><meta property="og:title" content="R&amp;J South Wales Platinum Catalogue — Andy"><meta property="og:description" content="Explore my interactive R&amp;J South Wales trade catalogue. Browse, tap a product code and send me your quote."><meta property="og:url" content="https://andywdavis.github.io/">
 <style>
 :root{--bg:#070c14;--line:#384253;--muted:#b4c2d3;--silver:#f5f7fa;--red:#cc2936}
 *{box-sizing:border-box}html,body{width:100%;height:100%;margin:0}
@@ -473,7 +473,7 @@ nav{padding-bottom:3px}
   <p><strong>10% of what your mate spends on their first R&amp;J order is deducted from your next order.</strong></p>
   <p class="referral-tip" style="font-size:clamp(14px,3.8vw,17px);font-weight:800;color:#e8d3a2;line-height:1.32">The more mates you send my way, the more you'll save.</p>
   <label class="referral-label" for="referName">Your name or business</label>
-  <input id="referName" class="referral-name" type="text" placeholder="So Max knows who to reward" maxlength="60" autocomplete="name" aria-describedby="referNote">
+  <input id="referName" class="referral-name" type="text" placeholder="So Andy knows who to reward" maxlength="60" autocomplete="name" aria-describedby="referNote">
   <div class="referral-code-label">UNIQUE REFERRAL REFERENCE</div>
   <div id="referCode" class="referral-code" aria-live="polite">RJ-········</div>
   <p id="referNote" class="referral-note">Your code and name are added to the WhatsApp message and catalogue link. Your mate quotes the code on their first order.</p>
@@ -1001,7 +1001,7 @@ async function saveCatalogue(){
 }
 // Referral references: one difficult-to-guess code per recommendation.
 // This is manual attribution via a quoted code, NOT server-side tracking or automatic rewards.
-const referralUrl='https://andywdavis.github.io/max-merseyside-draft/';
+const referralUrl='https://andywdavis.github.io/';
 const referDialog=document.getElementById('referDialog');
 const referNameInput=document.getElementById('referName');
 const referCodeDisplay=document.getElementById('referCode');
@@ -1027,7 +1027,7 @@ function createShareLink(code,from){
  return url.toString();
 }
 // Store the reference when a mate arrives from WhatsApp, so the code survives
-// when they later browse, save the catalogue or message Max.
+// when they later browse, save the catalogue or message Andy.
 const incomingQuery=new URLSearchParams(location.search);
 const incomingCode=(incomingQuery.get('rjref')||'').trim().toUpperCase();
 const incomingFrom=cleanName(incomingQuery.get('rjby'));
@@ -1055,7 +1055,7 @@ window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!referDialog.hidden)r
 document.getElementById('referOnWhatsapp').addEventListener('click',()=>{
  const name=cleanName(referNameInput.value);
  if(!name){
-  referError.textContent='Please enter your name or business so Max knows who to credit.';
+  referError.textContent='Please enter your name or business so Andy knows who to credit.';
   referError.hidden=false;
   referNameInput.focus();
   return;
@@ -1064,7 +1064,7 @@ document.getElementById('referOnWhatsapp').addEventListener('click',()=>{
  writeStored(REF_NAME_KEY,name);
  const code=currentShareCode||createReferralCode();
  const link=createShareLink(code,name);
- const message='Hi! I thought you might find the R&J Builders Hardware Trade Catalogue useful.\n\n'+link+'\n\nReferral reference: '+code+'\nRecommended by: '+name+'\n\nIf you place your first order, please quote this reference to Max (07836 603701), so he can credit my referral. Thanks!';
+ const message='Hi! I thought you might find the R&J Builders Hardware Trade Catalogue useful.\n\n'+link+'\n\nReferral reference: '+code+'\nRecommended by: '+name+'\n\nIf you place your first order, please quote this reference to Andy (07836 776302), so he can credit my referral. Thanks!';
  try{
   const history=JSON.parse(readStored(REF_HISTORY_KEY)||'[]');
   if(Array.isArray(history)){
@@ -1082,13 +1082,13 @@ if(incomingReferral){
  const where='\nReferral reference: '+incomingReferral.code+(incomingReferral.from?'\nRecommended by: '+incomingReferral.from:'');
  const waLink=document.querySelector('#contactBar .contact-button.whatsapp');
  if(waLink){
-  const msg="Hi Max, I've been looking through the R&J South Wales Trade Catalogue."+where;
+  const msg="Hi Andy, I've been looking through the R&J South Wales Trade Catalogue."+where;
   waLink.href='https://wa.me/447836776302?text='+encodeURIComponent(msg);
  }
  const emailLink=document.querySelector('#contactBar .contact-button.email');
  if(emailLink){
   const sub='R&J South Wales Trade Catalogue Enquiry';
-  emailLink.href='mailto:andy.davis@rjbh.co.uk?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent('Hi Max,'+where+'\n\n');
+  emailLink.href='mailto:andy.davis@rjbh.co.uk?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent('Hi Andy,'+where+'\n\n');
  }
 }
 document.getElementById('saveCatalogue').addEventListener('click',saveCatalogue);
@@ -2177,7 +2177,7 @@ window.RJ_QUOTE_MAPS={"max":{"3":[{"code":"48053","description":"Waterproof Cott
       document.body.append(panel);
       const wa=cfg.wa||'447836776302';
       const email=cfg.email||'andy.davis@rjbh.co.uk';
-      const message="Hi Max, I have drawings for a stud & track job. Could you work out the quantities and send me a trade quote? I'll attach the plans here.";
+      const message="Hi Andy, I have drawings for a stud & track job. Could you work out the quantities and send me a trade quote? I'll attach the plans here.";
       panel.querySelector('#rj72-wa-plans').href='https://wa.me/'+wa+'?text='+encodeURIComponent(message);
       panel.querySelector('#rj72-email-plans').href='mailto:'+email+'?subject='+encodeURIComponent('Stud & Track — drawings for a trade quote')+'&body='+encodeURIComponent(message+'\n\nPlease see my attached drawings.');
       panel.querySelector('#rj72-close-draw').addEventListener('click',()=>panel.remove());
@@ -2192,7 +2192,7 @@ window.RJ_QUOTE_MAPS={"max":{"3":[{"code":"48053","description":"Waterproof Cott
     panel.querySelector('#rj72-draw-title').textContent='SEND ME YOUR CEILING DRAWINGS!';
     panel.querySelector('p').textContent='I’ll work out the ceiling materials you need and get you a cracking trade quote.';
     const wa=cfg.wa||'447836776302',email=cfg.email||'andy.davis@rjbh.co.uk';
-    const message="Hi Max, I've got plans for an MF suspended ceiling job. Can you work out the materials and quantities and send me a trade quote? I'll attach my drawings.";
+    const message="Hi Andy, I've got plans for an MF suspended ceiling job. Can you work out the materials and quantities and send me a trade quote? I'll attach my drawings.";
     panel.querySelector('#rj72-wa-plans').href='https://wa.me/'+wa+'?text='+encodeURIComponent(message);
     panel.querySelector('#rj72-email-plans').href='mailto:'+email+'?subject='+encodeURIComponent('MF Suspended Ceiling — drawings for a trade quote')+'&body='+encodeURIComponent(message+'\n\nPlease see my attached drawings.');
     return true;
