@@ -453,6 +453,38 @@ nav{padding-bottom:3px}
 .rjq-family-controls output{display:flex;justify-content:center;align-items:center;min-width:33px;height:42px;background:white;color:#152944;font-size:18px;font-weight:950;border-radius:7px}
 @media(max-width:360px){.rjq-family-controls button{min-width:30px}.rjq-family-details b{font-size:15px}.rjq-family-details span{font-size:11px}}
 </style><style>.rjq-pick-hint:empty{display:none!important}</style>
+
+<!-- OPTIONAL CUSTOMER CALLBACK — isolated styling; original catalogue pages and quote controls unchanged -->
+<style id="rjlead-style">
+#contactBar{grid-template-columns:repeat(6,minmax(0,1fr))}
+#contactBar .contact-button.callback{background:linear-gradient(160deg,#ffe8a0 0%,#e3b94e 48%,#a56b14 100%);color:#2b1a03;border-color:#fff0b8;text-shadow:0 1px #fff9;box-shadow:inset 0 1px 0 #ffffffaa,0 2px 5px #0005;font-weight:950}
+#rjlead-invite[hidden],#rjlead-dialog[hidden],#rjlead-done[hidden]{display:none!important}
+#rjlead-invite{position:fixed;z-index:42;right:9px;bottom:calc(99px + env(safe-area-inset-bottom));width:min(340px,calc(100vw - 18px));box-sizing:border-box;padding:13px 14px 12px;background:linear-gradient(135deg,#213449,#101c2d);color:white;border:1px solid #e6c978;border-radius:14px;box-shadow:0 10px 34px #0009;font:600 13px/1.4 system-ui,sans-serif}
+#rjlead-invite strong{display:block;font-size:16px;color:#ffecae;line-height:1.23;margin-bottom:3px;padding-right:18px}
+#rjlead-invite .rjlead-invite-actions{display:flex;align-items:center;gap:7px;margin-top:10px}
+#rjlead-invite button{min-height:34px;border-radius:8px;border:1px solid #dac277;padding:7px 10px;font-size:12px;font-weight:900}
+#rjlead-prompt-yes{flex:1;color:#211a0a;background:linear-gradient(#ffeaac,#dbb447)}
+#rjlead-prompt-no{background:transparent;color:#d2deed;border-color:#647990!important}
+#rjlead-prompt-close{position:absolute;right:7px;top:6px;background:transparent!important;border:0!important;color:#e2e9ef;font-size:21px!important;min-height:25px!important;padding:0 7px!important}
+#rjlead-dialog{position:fixed;inset:0;z-index:210;padding:16px;box-sizing:border-box;background:#000b;display:flex;align-items:center;justify-content:center;font-family:system-ui,-apple-system,Arial,sans-serif;color:white}
+#rjlead-dialog .rjlead-card{width:min(100%,420px);max-height:88dvh;overflow-y:auto;overscroll-behavior:contain;background:linear-gradient(155deg,#273950,#101b2b);border:1px solid #ddc376;border-radius:17px;padding:18px 18px 16px;box-sizing:border-box;box-shadow:0 20px 65px #000b}
+#rjlead-dialog .rjlead-eyebrow{font:950 11px/1.3 system-ui;letter-spacing:.08em;color:#f5d987;margin-bottom:6px}
+#rjlead-dialog h2{font-size:clamp(22px,5.7vw,27px);line-height:1.15;margin:0 28px 7px 0;letter-spacing:-.035em;color:#fff}
+#rjlead-dialog p{font-size:13px;line-height:1.43;color:#dbe6f2;margin:0 0 12px}
+#rjlead-dialog form{margin:0}
+#rjlead-dialog label{display:block;font-size:12px;font-weight:800;color:#e7eef6;margin:9px 0 4px}
+#rjlead-dialog .rjlead-field{display:block;width:100%;box-sizing:border-box;height:43px;border:1px solid #9eacc2;border-radius:8px;background:#fbfcff;color:#112032;font:650 16px/1.25 system-ui;padding:9px 10px;outline-offset:2px}
+#rjlead-dialog .rjlead-field:focus{outline:2px solid #ffe7a4}
+#rjlead-dialog .rjlead-note{font-size:11px;line-height:1.4;margin:10px 0;color:#d4deea}
+#rjlead-dialog .rjlead-error{min-height:0;font-size:12px;color:#ffdc87;font-weight:800;margin:6px 0}
+#rjlead-dialog .rjlead-action{width:100%;min-height:45px;border:1px solid #74e8a0;border-radius:10px;background:linear-gradient(#26ca74,#087b3f);color:#fff;letter-spacing:.015em;font-size:15px;font-weight:950;box-shadow:inset 0 1px 0 #ffffff4d}
+#rjlead-dialog .rjlead-action.sms{margin-top:8px;background:#253b56;border-color:#98aec7;font-size:12px;min-height:39px}
+#rjlead-dialog .rjlead-close{display:block;width:100%;background:transparent;color:#dbe6f2;border:0;min-height:37px;font-size:13px;font-weight:750;margin-top:6px}
+#rjlead-dialog .rjlead-x{float:right;background:transparent;color:#fff;border:0;font-size:24px;line-height:24px;padding:1px 4px}
+#rjlead-dialog .rjlead-small{font-size:11px!important;color:#c7d4e4!important;margin-top:9px!important;margin-bottom:0!important}
+@media(max-width:390px){#contactBar .contact-button{font-size:9px!important;padding-left:1px;padding-right:1px}#rjlead-dialog .rjlead-card{padding:14px}#rjlead-invite{bottom:calc(98px + env(safe-area-inset-bottom))}}
+@media(max-height:570px){#rjlead-dialog .rjlead-card{max-height:96dvh}#rjlead-invite{bottom:90px}}
+</style>
 </head><body>
 <main id="stage" aria-label="R and J catalogue pages. Swipe to turn, pinch to zoom. Press and hold arrows to flip quickly.">
 <div id="book">
@@ -474,6 +506,7 @@ nav{padding-bottom:3px}
   <a class="contact-button email" href="mailto:andy.davis@rjbh.co.uk?subject=R%26J%20Trade%20Catalogue%20Enquiry" aria-label="Email Andy at andy.davis@rjbh.co.uk"><span class="contact-icon" aria-hidden="true">✉</span><span>Email</span></a>
   <button id="saveCatalogue" class="contact-button save" type="button" aria-label="Save R and J Catalogue to your phone"><span class="contact-icon" aria-hidden="true">⇩</span><span>Save Catalogue</span></button>
   <button id="referMate" class="contact-button refer" type="button" aria-label="Refer a mate by sharing the R and J Trade Catalogue"><span class="contact-icon" aria-hidden="true">↗</span><span>Refer a Mate</span></button>
+  <button id="rjlead-open" class="contact-button callback" type="button" aria-label="Ask Andy to call you back"><span class="contact-icon" aria-hidden="true">☎</span><span>Call Me Back</span></button>
 </footer>
 <div class="backdrop" id="referDialog" role="dialog" aria-modal="true" aria-labelledby="referHeading" hidden>
  <div class="dialog referral-card">
@@ -3282,6 +3315,92 @@ new MutationObserver(sync).observe(counter,{childList:true,characterData:true,su
  // Page turnover can also run without a counter mutation (e.g. refitting).
  new MutationObserver(schedule).observe(layer,{childList:true});
  schedule();
+})();
+</script>
+
+<!-- Call Me Back: optional; browsing and all product/quote controls remain available -->
+<aside id="rjlead-invite" aria-label="Optional callback invitation" hidden>
+  <button id="rjlead-prompt-close" type="button" aria-label="Dismiss callback invitation">×</button>
+  <strong>Need a price or some advice?</strong>
+  I can give you a quick call. It's completely optional — enjoy browsing either way.
+  <div class="rjlead-invite-actions"><button id="rjlead-prompt-yes" type="button">☎ YES, CALL ME</button><button id="rjlead-prompt-no" type="button">NOT NOW</button></div>
+</aside>
+<div id="rjlead-dialog" role="dialog" aria-modal="true" aria-labelledby="rjlead-heading" hidden>
+ <div class="rjlead-card">
+  <button id="rjlead-x" class="rjlead-x" type="button" aria-label="Close and browse catalogue">×</button>
+  <div class="rjlead-eyebrow">R&amp;J SOUTH WALES · PERSONAL SERVICE</div>
+  <h2 id="rjlead-heading">WANT ME TO CALL YOU?</h2>
+  <p>Leave me your details and I'll get back to you about the products you're interested in. No obligation.</p>
+  <form id="rjlead-form">
+   <label for="rjlead-name">Your name *</label>
+   <input class="rjlead-field" id="rjlead-name" name="name" type="text" autocomplete="name" maxlength="70" required placeholder="Your name">
+   <label for="rjlead-business">Business name (optional)</label>
+   <input class="rjlead-field" id="rjlead-business" name="business" type="text" autocomplete="organization" maxlength="80" placeholder="Business / company">
+   <label for="rjlead-phone">Mobile number *</label>
+   <input class="rjlead-field" id="rjlead-phone" name="mobile" type="tel" autocomplete="tel" inputmode="tel" maxlength="24" required placeholder="07... or +44...">
+   <p class="rjlead-note">Your details go directly to me through WhatsApp or SMS, only when <b>you press Send</b>. I'll use them to reply to this enquiry, not to add you to a marketing list.</p>
+   <p class="rjlead-error" id="rjlead-error" role="alert" aria-live="polite"></p>
+   <button id="rjlead-wa" class="rjlead-action" type="submit">SEND MY REQUEST ON WHATSAPP →</button>
+   <button id="rjlead-sms" class="rjlead-action sms" type="button">OR SEND BY TEXT MESSAGE</button>
+   <button id="rjlead-dismiss" class="rjlead-close" type="button">No thanks — back to the catalogue</button>
+  </form>
+  <p class="rjlead-small" id="rjlead-done" role="status" hidden>Finish by tapping <b>Send</b> in your messaging app. I'll then receive your callback request.</p>
+ </div>
+</div>
+<script id="rjlead-script">
+(()=>{'use strict';
+ const byId=(id)=>document.getElementById(id);
+ const prompt=byId('rjlead-invite'), dialog=byId('rjlead-dialog'), form=byId('rjlead-form');
+ const name=byId('rjlead-name'), business=byId('rjlead-business'), phone=byId('rjlead-phone');
+ const error=byId('rjlead-error'), done=byId('rjlead-done');
+ const key='rj_callback_prompt_dismissed_v1';
+ let opener=null;
+ function record(eventName,method){
+  try{if(typeof window.gtag==='function')window.gtag('event',eventName,method?{contact_method:method}:{});}catch(_){}
+ }
+ function dismissPrompt(){prompt.hidden=true;try{localStorage.setItem(key,'1')}catch(_){}}
+ function openForm(){
+  opener=document.activeElement;dismissPrompt();dialog.hidden=false;done.hidden=true;error.textContent='';
+  record('callback_form_opened');setTimeout(()=>name.focus({preventScroll:true}),30);
+ }
+ function closeForm(){dialog.hidden=true;error.textContent='';if(opener&&typeof opener.focus==='function')opener.focus({preventScroll:true});}
+ function pageText(){
+  const count=byId('count');const match=(count?.textContent||'').match(/PAGE\s+([\dAB.]+)/i);
+  return match ? 'Page '+match[1] : 'Catalogue';
+ }
+ function details(){
+  const person=name.value.trim().replace(/\s+/g,' ');
+  const firm=business.value.trim().replace(/\s+/g,' ');
+  const number=phone.value.trim();
+  const norm=number.replace(/[\s()\-.]/g,'');
+  const validated=/^07\d{9}$/.test(norm)||/^\+447\d{9}$/.test(norm)||/^447\d{9}$/.test(norm);
+  if(!person){error.textContent='Please enter your name.';name.focus();return null;}
+  if(!validated){error.textContent='Please enter a UK mobile number starting 07 or +447.';phone.focus();return null;}
+  const msg=['Hi Andy, I have been looking at your R&J Platinum Catalogue and would like you to call me back.',
+   '', 'Name: '+person, ...(firm?['Business: '+firm]:[]), 'Mobile: '+number, 'Viewing: '+pageText(),
+   '', 'Please call me when convenient.'];
+  error.textContent='';return msg.join('\n');
+ }
+ function send(method){
+  const msg=details();if(!msg)return;
+  record('callback_request_started',method);
+  done.hidden=false;
+  const encoded=encodeURIComponent(msg);
+  // The visitor reviews and taps Send in their own messaging app: no silent submissions.
+  const url=method==='sms'?'sms:+447836776302?body='+encoded:'https://wa.me/447836776302?text='+encoded;
+  window.location.href=url;
+ }
+ byId('rjlead-open').addEventListener('click',openForm);
+ byId('rjlead-prompt-yes').addEventListener('click',openForm);
+ byId('rjlead-prompt-no').addEventListener('click',dismissPrompt);
+ byId('rjlead-prompt-close').addEventListener('click',dismissPrompt);
+ byId('rjlead-x').addEventListener('click',closeForm);
+ byId('rjlead-dismiss').addEventListener('click',closeForm);
+ form.addEventListener('submit',(e)=>{e.preventDefault();send('whatsapp')});
+ byId('rjlead-sms').addEventListener('click',()=>send('sms'));
+ dialog.addEventListener('click',(e)=>{if(e.target===dialog)closeForm()});
+ document.addEventListener('keydown',(e)=>{if(e.key==='Escape'&&!dialog.hidden)closeForm()});
+ try{if(localStorage.getItem(key)!=='1')setTimeout(()=>{if(dialog.hidden&&prompt.hidden)prompt.hidden=false},1800)}catch(_){setTimeout(()=>{if(dialog.hidden)prompt.hidden=false},1800)}
 })();
 </script>
 </body></html>
