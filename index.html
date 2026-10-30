@@ -1,4 +1,5 @@
 <!doctype html><html lang="en"><head>
+<!-- R&J index v20261030: 118-page catalogue-wide search; compact controls; approved pages unchanged; division=ANDY_SOUTH_WALES -->
 <!-- Google tag (gtag.js) - R&J South Wales Catalogue -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-997WN98Q3V"></script>
 <script>
@@ -486,6 +487,109 @@ nav{padding-bottom:3px}
 #rjlead-dialog .rjlead-small{font-size:11px!important;color:#c7d4e4!important;margin-top:9px!important;margin-bottom:0!important}
 @media(max-width:390px){#contactBar .contact-button{font-size:9px!important;padding-left:1px;padding-right:1px}#rjlead-dialog .rjlead-card{padding:14px}#rjlead-invite{bottom:calc(98px + env(safe-area-inset-bottom))}}
 @media(max-height:570px){#rjlead-dialog .rjlead-card{max-height:96dvh}#rjlead-invite{bottom:90px}}
+</style>
+<style>
+
+/* NEW: compact catalogue-wide 10-heading index, never on product artwork */
+#rj-find-open { display:flex; align-items:center; justify-content:center; gap:12px;
+ margin:5px 13px 4px; padding:9px 13px; min-height:45px; width:calc(100% - 26px);
+ border:2px solid #e2b951; border-radius:11px; color:#fbeab9;
+ background:linear-gradient(180deg,#153d55,#071d30 88%); box-shadow:inset 0 1px 0 #ffffff30,0 2px 7px #0004;
+ font:900 clamp(14px,3.8vw,18px)/1.2 system-ui,-apple-system,Segoe UI,sans-serif; letter-spacing:.02em;
+ cursor:pointer; position:relative; z-index:7; }
+#rj-find-open strong{color:#fff;font-weight:900} #rj-find-open span:first-child{font-size:23px}
+#rj-find-open:focus-visible,.rj-find-modal button:focus-visible,.rj-find-modal input:focus-visible{outline:3px solid #f9df72;outline-offset:2px}
+#rj-find-modal[hidden]{display:none!important}
+#rj-find-modal{position:fixed;inset:0;z-index:2147483000;background:rgba(1,9,17,.88);display:grid;place-items:center;padding:12px;
+ font-family:system-ui,-apple-system,Segoe UI,sans-serif;}
+.rj-find-modal .rj-find-panel{box-sizing:border-box;width:min(650px,100%);max-height:min(89dvh,860px);overflow-y:auto;
+ background:linear-gradient(165deg,#162e42,#0a1726);border:2px solid #deb759;border-radius:17px;
+ box-shadow:0 20px 70px #000b;color:#fff;padding:16px 15px 18px;overscroll-behavior:contain}
+.rj-find-modal .rj-find-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:9px}
+.rj-find-modal .rj-find-kicker{margin:0;color:#f6d580;font-size:12px;font-weight:900;letter-spacing:.08em}
+.rj-find-modal h2{color:#fff;font:900 clamp(22px,5vw,29px)/1.1 system-ui,sans-serif;margin:4px 0 0}
+.rj-find-modal .rj-find-close{flex:none;background:#b62832;color:#fff;border:1px solid #ff8888;border-radius:8px;font-size:24px;font-weight:bold;width:40px;height:40px;cursor:pointer}
+.rj-find-modal .rj-find-note{font-size:13px;color:#d5e0ed;margin:3px 0 12px;line-height:1.35}
+.rj-find-modal .rj-find-search{display:flex;gap:7px;margin-bottom:9px}
+.rj-find-modal .rj-find-input{width:100%;min-width:0;box-sizing:border-box;border-radius:9px;border:2px solid #a9bdd4;
+ background:#fff;color:#13243b;padding:11px 12px;font:700 16px system-ui,sans-serif}
+.rj-find-modal .rj-find-go{flex:0 0 auto;border:1px solid #fff3b5;border-radius:9px;color:#1a1b14;
+ background:linear-gradient(#f9e18b,#e4b53f);font:900 15px system-ui,sans-serif;padding:0 16px;cursor:pointer}
+.rj-find-modal .rj-find-results:empty{display:none}
+.rj-find-modal .rj-find-results{padding:4px 0 12px}
+.rj-find-modal .rj-find-result-title{font-weight:800;color:#f9db75;margin:0 0 6px;font-size:14px}
+.rj-find-modal .rj-find-result{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;box-sizing:border-box;
+ background:#233c50;color:white;border:1px solid #6c8ca5;border-radius:8px;padding:9px 10px;margin:5px 0;cursor:pointer}
+.rj-find-modal .rj-find-result b{display:block;color:#fff;font-size:13px;line-height:1.25}
+.rj-find-modal .rj-find-result small{display:block;color:#bfcbda;font-size:12px;margin-top:3px}
+.rj-find-modal .rj-find-pill{flex:none;border-radius:6px;padding:5px 7px;background:#d9ad3a;color:#17202c;font-weight:900;font-size:12px;white-space:nowrap}
+.rj-find-modal .rj-find-section-label{font-size:13px;font-weight:900;color:#efdb9f;margin:7px 0 8px;letter-spacing:.035em}
+.rj-find-modal .rj-find-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rj-find-modal .rj-find-cat{display:flex;align-items:center;gap:8px;min-height:54px;text-align:left;background:linear-gradient(135deg,#28495d,#162f43);
+ border:1px solid #698196;border-radius:10px;color:#fff;padding:10px 9px;cursor:pointer}
+.rj-find-modal .rj-find-number{background:linear-gradient(#e9d18a,#c9942b);color:#17212a;border-radius:6px;padding:5px 7px;flex:0 0 auto;font-size:13px;font-weight:900}
+.rj-find-modal .rj-find-cat-text{font-size:13px;line-height:1.23;font-weight:850;flex:1}
+.rj-find-modal .rj-find-cat-text small{display:block;font-size:11px;color:#cee1ef;font-weight:600;margin-top:3px}
+.rj-find-modal .rj-find-arrow{color:#ffe098;font-size:20px;flex:none}
+.rj-find-modal .rj-find-foot{font-size:11px;color:#c8d4de;line-height:1.45;margin:12px 2px 0}
+@media(max-width:440px){.rj-find-modal .rj-find-panel{padding:13px 10px}.rj-find-modal .rj-find-grid{grid-template-columns:1fr 1fr;gap:6px}
+ .rj-find-modal .rj-find-cat{min-height:65px;gap:5px;padding:8px 6px}.rj-find-modal .rj-find-cat-text{font-size:12px}
+ .rj-find-modal .rj-find-number{font-size:12px;padding:5px 6px}.rj-find-modal .rj-find-arrow{font-size:17px}}
+
+</style><style id="rj-compact-layout-approval-proof">
+/* APPROVAL PROOF: roomier product pages, unchanged actions and text. */
+nav[aria-label="Catalogue page navigation"] {
+ display:grid!important;
+ grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+ column-gap:5px;
+ row-gap:3px;
+ padding:3px 5px 2px!important;
+ align-items:center;
+}
+#rj-find-open {
+ grid-column:1;
+ grid-row:1;
+ width:100%!important;
+ min-width:0!important;
+ margin:0!important;
+ height:48px!important;
+ min-height:48px!important;
+ padding:4px 5px!important;
+ gap:5px!important;
+ font-size:clamp(10px,2.9vw,13px)!important;
+ line-height:1.12!important;
+ border-radius:9px!important;
+}
+#rj-find-open strong {flex:1;text-align:left;overflow-wrap:normal;}
+#rj-find-open span:first-child{font-size:20px!important;}
+#rjq-guide {
+ grid-column:2;
+ grid-row:1;
+ min-width:0!important;
+ width:100%!important;
+ margin:0!important;
+ height:48px!important;
+ min-height:48px!important;
+ padding:3px 4px!important;
+ gap:2px 4px!important;
+ white-space:normal!important;
+ flex-wrap:wrap!important;
+ align-content:center;
+ font-size:clamp(9px,2.45vw,11px)!important;
+ line-height:1.15!important;
+}
+#rjq-guide span:first-child{font-size:16px!important;}
+#rjq-guide strong{letter-spacing:0!important;}
+nav[aria-label="Catalogue page navigation"] .nav-strip {
+ grid-column:1/-1;grid-row:2;
+ width:100%;height:42px!important;margin:0 auto!important;
+}
+#contactBar{margin:0!important; padding-top:3px!important;padding-bottom:max(3px,env(safe-area-inset-bottom))!important;}
+</style>
+<style id="rjq-product-picker-tap-fix">
+/* Hidden filter results must not remain visible through the original flex style. */
+.rjq-pick-options .rjq-pick-option[hidden],.rjq-pick-options .rjq-pick-no-results[hidden]{display:none!important}
+#rjq-guide{pointer-events:auto!important;touch-action:manipulation!important;cursor:pointer!important}
 </style>
 </head><body>
 <main id="stage" aria-label="R and J catalogue pages. Swipe to turn, pinch to zoom. Press and hold arrows to flip quickly.">
@@ -2440,10 +2544,20 @@ window.RJ_QUOTE_MAPS.max['3.5']=[{"code":"48053","description":"Waterproof Cotto
   }
   const guide=query('rjq-guide');
   if(guide){
+    // The entire tap bar searches the complete catalogue, never only this page.
+    // Printed gold code hotspots continue to open their existing quote functions.
     guide.style.cursor='pointer';
     guide.style.touchAction='manipulation';
-    guide.addEventListener('click',event=>{event.preventDefault();openPageProductChooser();});
-    guide.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();openPageProductChooser();}});
+    guide.setAttribute('title','Search all 118 catalogue pages');
+    guide.setAttribute('aria-label','Search product names and codes across all 118 pages');
+    const openAllCatalogueSearch=event=>{
+      event.preventDefault();
+      document.getElementById('rj-find-open')?.click();
+    };
+    guide.addEventListener('click',openAllCatalogueSearch);
+    guide.addEventListener('keydown',event=>{
+      if(event.key==='Enter'||event.key===' ')openAllCatalogueSearch(event);
+    });
   }
 
   new MutationObserver(()=>hotspots()).observe(counter,{childList:true,subtree:true,characterData:true});
@@ -3466,4 +3580,93 @@ new MutationObserver(sync).observe(counter,{childList:true,characterData:true,su
  try{if(localStorage.getItem(key)!=='1')setTimeout(()=>{if(dialog.hidden&&prompt.hidden)prompt.hidden=false},1800)}catch(_){setTimeout(()=>{if(dialog.hidden)prompt.hidden=false},1800)}
 })();
 </script>
-</body></html>
+<script>
+/* INDEX & FIND: ten category titles + live product-name/code search, using existing navigation + product maps. */
+(()=>{'use strict';
+ if(document.getElementById('rj-find-open'))return;
+ const guide=document.getElementById('rjq-guide');
+ const nav=document.querySelector('nav[aria-label="Catalogue page navigation"]');
+ if(!nav)return;
+ const button=document.createElement('button');
+ button.type='button';button.id='rj-find-open';button.innerHTML='<span aria-hidden="true">🔎</span><strong>INDEX &amp; PRODUCT SEARCH</strong><span aria-hidden="true">›</span>';
+ button.setAttribute('aria-label','Open catalogue index and product search');
+ if(guide)guide.insertAdjacentElement('beforebegin',button);else nav.insertBefore(button,nav.firstChild);
+ const categories=[["Site Protection & Safety", 3, 6], ["Tools, Drainage & Groundwork", 7, 13], ["Brickwork & Damp Proofing", 14, 24], ["Roofing & Rainwater", 25, 35], ["Blades, Nails & Fixings", 36, 52], ["Screws, Tapes & Fasteners", 53, 60], ["Plastering, Drywall & Ceilings", 61, 73], ["Drills, Accessories & Flooring", 74, 80], ["Doors, Hinges & Ironmongery", 81, 103], ["Adhesives, Sealants & Outdoor", 104, 118]];
+ const backdrop=document.createElement('div');backdrop.id='rj-find-modal';backdrop.className='rj-find-modal';backdrop.hidden=true;
+ backdrop.setAttribute('role','dialog');backdrop.setAttribute('aria-modal','true');backdrop.setAttribute('aria-label','Product index and search');
+ backdrop.innerHTML=`<section class="rj-find-panel">
+ <header class="rj-find-head"><div><p class="rj-find-kicker">R&J PLATINUM CATALOGUE</p><h2>FIND IT FAST</h2></div><button type="button" class="rj-find-close" aria-label="Close index">×</button></header>
+ <p class="rj-find-note">Search a product name, gold code or page number — or tap one of the 10 sections below.</p>
+ <form class="rj-find-search"><input class="rj-find-input" type="search" aria-label="Search product name, code or page number" placeholder="e.g. dry ridge, 52203, hinges" autocomplete="off" enterkeyhint="search"/><button class="rj-find-go" type="submit">SEARCH ›</button></form>
+ <div class="rj-find-results" role="status" aria-live="polite"></div>
+ <p class="rj-find-section-label">10 QUICK SECTIONS — TAP TO OPEN</p><div class="rj-find-grid"></div>
+ <p class="rj-find-foot">Opens the original catalogue page — your gold product codes and quote remain available. Each section opens at its first page.</p></section>`;
+ document.body.appendChild(backdrop);
+ const inp=backdrop.querySelector('.rj-find-input'),results=backdrop.querySelector('.rj-find-results');
+ let origin=null;let activeHits=[];
+ const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+ function fold(v){return String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().replace(/\b([a-z]{4,})s\b/g,'$1')}
+ const map=window.RJ_QUOTE_MAPS||{};const division=window.RJ_QUOTE_DIVISION?.id||'max';
+ const records=[];const seen=new Set();
+ for(const [page,spots] of Object.entries(map[division]||map.max||{})){
+   if(!Array.isArray(spots))continue;
+   for(const item of spots){const code=String(item.code||'').trim(),title=String(item.description||'').trim();if(!code&&!title)continue;
+     const key=page+'|'+code+'|'+title; if(seen.has(key))continue;seen.add(key);
+     records.push({page:Number(page),code,title,text:fold(code+' '+title)});
+   }
+ }
+ const grid=backdrop.querySelector('.rj-find-grid');
+ for(const [i,c] of categories.entries()){
+  const b=document.createElement('button');b.type='button';b.className='rj-find-cat';b.setAttribute('aria-label',c[0]+', open page '+c[1]);
+  b.innerHTML='<span class="rj-find-number">'+(i+1)+'</span><span class="rj-find-cat-text">'+esc(c[0])+'<small>Pages '+c[1]+'–'+c[2]+'</small></span><span class="rj-find-arrow">›</span>';
+  b.addEventListener('click',()=>jumpTo(c[1]));grid.appendChild(b);
+ }
+ function open(){origin=document.activeElement;backdrop.hidden=false;inp.focus();inp.select();}
+ function close(){backdrop.hidden=true;if(origin&&typeof origin.focus==='function')origin.focus();}
+ // Uses the catalogue's existing page-number form, preserving every original page transition and quote handler.
+ function jumpTo(n){
+  const jump=document.getElementById('jump');const form=document.getElementById('jumpForm');if(!jump||!form)return;
+  close();jump.value=String(n);form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
+ }
+ function find(q){
+  const f=fold(q),bits=f.split(' ').filter(Boolean);if(!f)return [];
+  let matches=[];
+  // Curated shortcuts for broad trade terms, grounded in the existing pages.
+  const shortcuts={'hinge':94,'dry ridge':31,'roof':28,'roofing':28,'roofer':28,'saw':38,'first aid':6,
+   'airbrick':21,'dpc':12,'drainage':10,'diamond blade':37,'xr screw':59,'drywall':67,
+   'plastering':61,'door handle':91,'ironmongery':81,'screw':55,'glove':5,'sealant':113};
+  if(shortcuts[f])matches.push({page:shortcuts[f],code:'',title:q.trim()+' — featured section',score:98});
+  for(const item of records){let score=0;
+   const cod=fold(item.code),title=fold(item.title);
+   if(cod===f)score=100;
+   else if(cod.startsWith(f)&&f.length>=3)score=80;
+   else if(title===f)score=70;
+   else if(title.includes(f))score=60;
+   else if(bits.every(w=>item.text.includes(w)))score=45;
+   if(score)matches.push({...item,score});
+  }
+  for(const cat of categories){if(fold(cat[0]).includes(f)||bits.every(w=>fold(cat[0]).includes(w)))matches.push({page:cat[1],code:'',title:cat[0],score:35});}
+  matches.sort((a,b)=>b.score-a.score||a.page-b.page);
+  // One result per catalogue page, with the strongest product match shown.
+  const pages=new Set();return matches.filter(x=>{if(pages.has(x.page))return false;pages.add(x.page);return true}).slice(0,12);
+ }
+ function show(q){const text=q.trim();if(!text){results.textContent='Type a product name, code or page number.';activeHits=[];return;}
+  if(/^\d{1,3}$/.test(text)&&Number(text)>=1&&Number(text)<=118){activeHits=[{page:Number(text),title:'Go directly to catalogue page '+text,code:''}];}
+  else activeHits=find(text);
+  results.replaceChildren();
+  const head=document.createElement('p');head.className='rj-find-result-title';head.textContent=activeHits.length ? 'FOUND '+activeHits.length+' PAGE'+(activeHits.length>1?'S':'')+' — TAP A RESULT' : 'No product match — try a code or another word';results.appendChild(head);
+  for(const x of activeHits){const b=document.createElement('button');b.type='button';b.className='rj-find-result';
+   const lhs=document.createElement('span'),title=document.createElement('b'),sub=document.createElement('small'),pill=document.createElement('span');
+   title.textContent=x.title;sub.textContent=x.code?'Product code '+x.code:'Catalogue section';pill.className='rj-find-pill';pill.textContent='PAGE '+String(x.page).replace('.5','B')+' ›';
+   lhs.append(title,sub);b.append(lhs,pill);b.addEventListener('click',()=>jumpTo(x.page));results.appendChild(b);
+  }
+ }
+ button.addEventListener('click',open);
+ backdrop.querySelector('.rj-find-close').addEventListener('click',close);
+ backdrop.addEventListener('click',e=>{if(e.target===backdrop)close()});
+ backdrop.querySelector('form').addEventListener('submit',e=>{e.preventDefault();show(inp.value);if(activeHits.length)jumpTo(activeHits[0].page)});
+ let typingTimer=null;
+ inp.addEventListener('input',()=>{clearTimeout(typingTimer);typingTimer=setTimeout(()=>{if(inp.value.trim().length>=2)show(inp.value);else results.replaceChildren()},170)});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!backdrop.hidden){e.stopImmediatePropagation();e.preventDefault();close()}});
+})();
+</script></body></html>
