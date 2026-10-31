@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head>
-<!-- R&J index v20261030: 118-page catalogue-wide search; compact controls; approved pages unchanged; division=ANDY_SOUTH_WALES -->
+<!-- PLATINUM QUOTE LIVE INTEGRATION v20261031; R&J index v20261030: 118-page catalogue-wide search; compact controls; approved pages unchanged; division=ANDY_SOUTH_WALES -->
 <!-- Google tag (gtag.js) - R&J South Wales Catalogue -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-997WN98Q3V"></script>
 <script>
@@ -2803,10 +2803,39 @@ window.RJ_QUOTE_MAPS.max['3.5']=[{"code":"48053","description":"Waterproof Cotto
 
   function startNew(confirmFirst=true){if(confirmFirst&&items.length&&!confirm('Start a new quote? The current list will be cleared.'))return;items=[];window.RJXR59?.resetRewards?.();persist();render();query('rjq-review').hidden=true;query('rjq-overlay').hidden=false}
   function handedOff(){save(backupKey,{items:items.map(i=>({...i})),time:Date.now()});items=[];window.RJXR59?.resetRewards?.();persist();query('rjq-review').hidden=true;query('rjq-overlay').hidden=true;query('rjq-undo').hidden=false;}
-  function send(mode){if(!items.length)return;const body=text();if(mode==='copy'){if(navigator.clipboard?.writeText)navigator.clipboard.writeText(body).then(()=>query('rjq-reviewstatus').textContent='Copied. Your list is still here until you finish sending.');else query('rjq-reviewstatus').textContent='Copy the quotation text above.';return}
-   if(mode==='whatsapp'){window.open('https://wa.me/'+cfg.wa+'?text='+encodeURIComponent(body),'_blank','noopener');handedOff()}
-   if(mode==='email'){location.href='mailto:'+cfg.email+'?subject='+encodeURIComponent('R&J '+cfg.label+' quote request')+'&body='+encodeURIComponent(body);handedOff()}
+  // PLATINUM QUOTE LIVE: sends a short link to the fully itemised quote instead of a long WhatsApp text wall.
+  // Basket remains available after app hand-off; no silent order submission or fake final total.
+  function platinumQuoteLink(){
+    const snapshot=items.filter(it=>Number(it.qty)>0).map(it=>[
+      String(it.code||''),Number(it.qty)||1,String(it.description||'Product'),String(it.page||''),String(it.unit||''),!!it.gift
+    ]);
+    const payload={v:1,r:cfg.rep,d:cfg.label,m:cfg.wa,e:cfg.email,i:snapshot};
+    const bytes=new TextEncoder().encode(JSON.stringify(payload));let binary='';for(const b of bytes)binary+=String.fromCharCode(b);
+    const token=btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+    const link=new URL('quote.html',window.location.href);link.hash='q='+token;
+    return link.href;
   }
+  function send(mode){
+    if(!items.length)return;
+    if(mode==='copy'){
+      const body=text();if(navigator.clipboard?.writeText)navigator.clipboard.writeText(body).then(()=>query('rjq-reviewstatus').textContent='Copied. Your list is still here.');
+      else query('rjq-reviewstatus').textContent='Copy quote not supported here.';return;
+    }
+    const link=platinumQuoteLink();
+    if(link.length>9000){query('rjq-reviewstatus').textContent='Large quote: use Copy quote to send the complete list, or split into two requests.';return}
+    const {gifts,buckets,others,total}=reviewGroups();
+    const message=['R&J PLATINUM TRADE QUOTE REQUEST','For '+cfg.rep+' · '+cfg.label,
+      (buckets.length+others.length)+' product lines · '+total+' XR buckets · '+gifts.length+' free gift(s)',
+      '','OPEN MY ITEMISED REQUEST:',link,'','Please confirm prices and delivery. Thank you!'].join('\n');
+    if(mode==='whatsapp')window.open('https://wa.me/'+cfg.wa+'?text='+encodeURIComponent(message),'_blank','noopener');
+    if(mode==='email')location.href='mailto:'+cfg.email+'?subject='+encodeURIComponent('R&J Platinum quote request')+'&body='+encodeURIComponent(message);
+    query('rjq-reviewstatus').textContent='Quote link prepared. Your basket stays saved until you decide to clear it.';
+  }
+  // Show the new customer-friendly preview without losing the existing quote buttons.
+  const newPreview=document.createElement('button');newPreview.type='button';newPreview.className='rjq-btn';
+  newPreview.textContent='★ PREVIEW PLATINUM QUOTE';
+  newPreview.addEventListener('click',()=>{if(items.length)window.open(platinumQuoteLink(),'_blank','noopener')});
+  query('rjq-copy')?.insertAdjacentElement('afterend',newPreview);
 
   // Phone-friendly code selection. The old invisible buttons were only ~8px tall
   // on a 390px phone, so real fingers missed them. Use the visible page's
