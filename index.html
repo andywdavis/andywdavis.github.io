@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head>
-<!-- PLATINUM QUOTE LIVE INTEGRATION v20261031; R&J index v20261030: 118-page catalogue-wide search; compact controls; approved pages unchanged; division=ANDY_SOUTH_WALES -->
+<!-- PLATINUM QUOTE LIVE INTEGRATION v20261031 READABLE WHATSAPP FIX; R&J index v20261030: 118-page catalogue-wide search; compact controls; approved pages unchanged; division=ANDY_SOUTH_WALES -->
 <!-- Google tag (gtag.js) - R&J South Wales Catalogue -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-997WN98Q3V"></script>
 <script>
@@ -2771,99 +2771,106 @@ window.RJ_QUOTE_MAPS.max['3.5']=[{"code":"48053","description":"Waterproof Cotto
     list.append(reviewElement('p','rjq-p-note','Please check your selection. Prices and delivery will be confirmed by '+cfg.rep+'.'));
     list.scrollTop=0;
   }
+  // WhatsApp, email and copy ALL use this SAME human-readable message.
+  // No encoded quote links, Base64, hashes, or separate quote.html required.
   function text(){
     const {gifts,buckets,others,total}=reviewGroups();
-    const lines=['R&J BUILDERS HARDWARE','QUOTE REQUEST','For '+cfg.rep,''];
+    const lines=['*R&J BUILDERS HARDWARE*','*TRADE QUOTE REQUEST*',
+      'For '+cfg.rep+' | '+cfg.label,''];
     if(gifts.length){
-      lines.push('🎁 FREE GIFTS — '+gifts.length+' earned');
-      for(const gift of gifts)lines.push('Gift '+gift.code.split('-').pop()+': '+reviewGiftDescription(gift)+' — FREE');
+      lines.push('*🎁 FREE GIFTS ('+gifts.length+')*');
+      for(const gift of gifts){
+        lines.push('• Gift '+gift.code.split('-').pop()+': '+reviewGiftDescription(gift));
+        lines.push('  *FREE*');
+      }
       lines.push('');
     }
     if(buckets.length){
-      lines.push('🔩 XR WOODSCREWS','TOTAL XR BUCKETS: '+total+' Bkt','');
+      lines.push('*🔩 XR WOODSCREWS*','*TOTAL XR BUCKETS: '+total+'*','');
       for(const item of buckets){
         const detail=screwDetails(item);
-        lines.push(Math.max(0,Number(item.qty)||0)+' Bkt  |  '+detail.size);
-        lines.push('Code '+item.code+'  ·  '+detail.contents,'');
+        lines.push('• *'+Math.max(0,Number(item.qty)||0)+' Bkt* — '+detail.size);
+        lines.push('  Code '+item.code+' | '+detail.contents,'');
       }
-      lines.push('');
     }
     if(others.length){
-      lines.push('📦 OTHER CATALOGUE PRODUCTS');
+      lines.push('*📦 OTHER CATALOGUE PRODUCTS*');
       for(const item of others){
-        lines.push(Math.max(0,Number(item.qty)||0)+' ×  '+String(item.description||'Product').trim());
-        lines.push('Code '+item.code+'  ·  Page '+quotePageLabel(item.page));
+        const name=String(item.description||'Product').trim();
+        if(item.gift){
+          lines.push('• *FREE GIFT* — '+name);
+        }else{
+          lines.push('• *'+Math.max(0,Number(item.qty)||0)+' ×* '+name);
+        }
+        lines.push('  Code '+item.code+' | Page '+quotePageLabel(item.page),'');
       }
-      lines.push('');
     }
-    if(buckets.length)lines.push('TOTAL XR BUCKETS: '+total+' Bkt','');
-    lines.push('Please confirm prices and delivery. Thank you!');
-    return lines.join('\n');
+    lines.push('Please confirm prices, stock and delivery.','Thank you!');
+    return lines.join('\n').trim();
   }
 
   function startNew(confirmFirst=true){if(confirmFirst&&items.length&&!confirm('Start a new quote? The current list will be cleared.'))return;items=[];window.RJXR59?.resetRewards?.();persist();render();query('rjq-review').hidden=true;query('rjq-overlay').hidden=false}
   function handedOff(){save(backupKey,{items:items.map(i=>({...i})),time:Date.now()});items=[];window.RJXR59?.resetRewards?.();persist();query('rjq-review').hidden=true;query('rjq-overlay').hidden=true;query('rjq-undo').hidden=false;}
-  // PLATINUM QUOTE LIVE: sends a short link to the fully itemised quote instead of a long WhatsApp text wall.
-  // Basket remains available after app hand-off; no silent order submission or fake final total.
-
-  function rjUrlB64(bytes){
-    let binary='';
-    for(let i=0;i<bytes.length;i+=8192)binary+=String.fromCharCode(...bytes.subarray(i,i+8192));
-    return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  // Send the actual readable product list, not a machine-encoded link.
+  // WhatsApp shows the decoded message to sender AND recipient before/after sending.
+  function copyQuote(body){
+    if(navigator.clipboard?.writeText){
+      navigator.clipboard.writeText(body)
+        .then(()=>{query('rjq-reviewstatus').textContent='Full quote copied. Your basket is still saved.';})
+        .catch(()=>copyQuoteFallback(body));
+    }else copyQuoteFallback(body);
   }
-  async function rjCompactQuoteToken(payload){
-    const bytes=new TextEncoder().encode(JSON.stringify(payload));
-    const raw='r'+rjUrlB64(bytes);
-    if(typeof CompressionStream==='function'){
-      try{
-        const stream=new Blob([bytes]).stream().pipeThrough(new CompressionStream('gzip'));
-        const zipped=new Uint8Array(await new Response(stream).arrayBuffer());
-        const compact='z'+rjUrlB64(zipped);
-        if(compact.length<raw.length)return compact;
-      }catch(e){console.warn('Quote link compression unavailable; using compatible fallback.',e)}
-    }
-    return raw;
+  function copyQuoteFallback(body){
+    const box=document.createElement('textarea');box.value=body;box.style.position='fixed';
+    box.style.opacity='0';box.style.left='-9999px';document.body.appendChild(box);
+    box.select();
+    let success=false;
+    try{success=document.execCommand('copy')}catch(_){success=false}
+    box.remove();
+    query('rjq-reviewstatus').textContent=success?'Full quote copied. Your basket is still saved.':'Please use WhatsApp or Email to send the quote.';
   }
-  async function platinumQuoteLink(){
-    const snapshot=items.filter(it=>Number(it.qty)>0).map(it=>[
-      String(it.code||''),Number(it.qty)||1,String(it.description||'Product'),String(it.page||''),String(it.unit||''),!!it.gift
-    ]);
-    const payload={v:1,r:cfg.rep,d:cfg.label,m:cfg.wa,e:cfg.email,i:snapshot};
-    const token=await rjCompactQuoteToken(payload);
-    const link=new URL('quote.html',window.location.href);link.hash='q='+token;
-    return link.href;
-  }
-  async function send(mode){
+  function send(mode){
     if(!items.length)return;
-    if(mode==='copy'){
-      const body=text();if(navigator.clipboard?.writeText)navigator.clipboard.writeText(body).then(()=>query('rjq-reviewstatus').textContent='Copied. Your list is still here.');
-      else query('rjq-reviewstatus').textContent='Copy quote not supported here.';return;
-    }
-    // Open a placeholder synchronously to avoid mobile popup blockers while the quote is compressed.
-    const shareWindow=mode==='whatsapp'?window.open('about:blank','_blank'):null;
-    if(shareWindow)shareWindow.opener=null;
-    const link=await platinumQuoteLink();
-    if(link.length>9000){if(shareWindow)shareWindow.close();query('rjq-reviewstatus').textContent='Large quote: use Copy quote to send the complete list, or split into two requests.';return}
-    const {gifts,buckets,others,total}=reviewGroups();
-    const message=['🔨 R&J PLATINUM · QUOTE REQUEST','For '+cfg.rep+' · '+cfg.label,
-      '📋 '+(buckets.length+others.length)+' product lines · '+total+' XR buckets · '+gifts.length+' free gift(s)',
-      '','VIEW & PRICE MY ORDER:',link,'','Please confirm prices and delivery. Thank you!'].join('\n');
+    const message=text();
+    if(mode==='copy'){copyQuote(message);return;}
     if(mode==='whatsapp'){
       const destination='https://wa.me/'+cfg.wa+'?text='+encodeURIComponent(message);
-      if(shareWindow)shareWindow.location.replace(destination);else window.location.href=destination;
+      // Large query strings can truncate, silently losing products: never allow that.
+      if(destination.length>14000){
+        query('rjq-reviewstatus').textContent='This is a very large quote. Use Copy quote and paste into WhatsApp, so no products are lost.';
+        return;
+      }
+      const opened=window.open(destination,'_blank');
+      if(opened)opened.opener=null;
+      else window.location.href=destination;
+    }else if(mode==='email'){
+      const emailUrl='mailto:'+cfg.email+'?subject='+encodeURIComponent('R&J South Wales trade quote request')+'&body='+encodeURIComponent(message);
+      if(emailUrl.length>14000){
+        query('rjq-reviewstatus').textContent='This is a very large quote. Use Copy quote and paste into an email to avoid missing products.';
+        return;
+      }
+      window.location.href=emailUrl;
     }
-    if(mode==='email')location.href='mailto:'+cfg.email+'?subject='+encodeURIComponent('R&J Platinum quote request')+'&body='+encodeURIComponent(message);
-    query('rjq-reviewstatus').textContent='Platinum order link prepared. Your basket stays saved until you decide to clear it.';
+    query('rjq-reviewstatus').textContent='Your complete product list is ready to send. Your basket stays saved.';
   }
-  // Show the new customer-friendly preview without losing the existing quote buttons.
+
+  // Preview the exact message going to Andy, with WhatsApp bold markers removed
+  // from this local preview only (WhatsApp itself renders the bold correctly).
   const newPreview=document.createElement('button');newPreview.type='button';newPreview.className='rjq-btn';
-  newPreview.textContent='★ PREVIEW PLATINUM QUOTE';
-  newPreview.addEventListener('click',async()=>{
+  newPreview.textContent='👀 Preview WhatsApp message';
+  const previewMask=document.createElement('div');previewMask.id='rjq-message-preview';
+  previewMask.className='rjq-mask';previewMask.hidden=true;
+  previewMask.innerHTML='<section class="rjq-panel" aria-label="WhatsApp message preview" role="dialog" aria-modal="true"><div class="rjq-top"><strong>What Andy receives</strong><button type="button" class="rjq-btn rjq-back" id="rjq-preview-close">← Back</button></div><small style="color:#cce3fa">This is the actual wording in the WhatsApp message, not an encoded link.</small><div class="rjq-review-body" id="rjq-message-preview-text" style="white-space:pre-wrap!important;overflow-y:auto;flex:1 1 auto"></div><button type="button" class="rjq-btn rjq-wa" id="rjq-preview-send">Send on WhatsApp →</button></section>';
+  document.body.appendChild(previewMask);
+  const closePreview=()=>{previewMask.hidden=true};
+  newPreview.addEventListener('click',()=>{
     if(!items.length)return;
-    const w=window.open('about:blank','_blank');if(w)w.opener=null;
-    const href=await platinumQuoteLink();
-    if(w)w.location.replace(href);else window.location.href=href;
+    query('rjq-message-preview-text').textContent=text().replace(/\*([^*\n]+)\*/g,'$1');
+    previewMask.hidden=false;
   });
+  query('rjq-preview-close').addEventListener('click',closePreview);
+  query('rjq-preview-send').addEventListener('click',()=>send('whatsapp'));
+  previewMask.addEventListener('click',e=>{if(e.target===previewMask)closePreview()});
   query('rjq-copy')?.insertAdjacentElement('afterend',newPreview);
 
   // Phone-friendly code selection. The old invisible buttons were only ~8px tall
