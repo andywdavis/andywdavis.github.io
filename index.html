@@ -1439,8 +1439,8 @@ window.RJ_QUOTE_MAPS.max['3.5']=[{"code":"48053","description":"Waterproof Cotto
       </section>
     </div>
     <div class="rjq-mask" id="rjq-review" hidden role="dialog" aria-modal="true" aria-label="Full quotation request">
-      <section class="rjq-panel"><div class="rjq-top"><strong>📋 Your Platinum Quote</strong><button class="rjq-btn rjq-back" id="rjq-edit" type="button">← Edit list</button></div>
-        <small style="color:#bdd3e7">Everything clearly listed. Check your gifts, bucket sizes and quantities before sending.</small>
+      <section class="rjq-panel"><div class="rjq-top"><strong>📋 Platinum Plus Order Summary</strong><button class="rjq-btn rjq-back" id="rjq-edit" type="button">← Edit list</button></div>
+        <small style="color:#bdd3e7">Check products, gift choices and quantities. Final prices, VAT and delivery will be confirmed before your order is accepted.</small>
         <div class="rjq-review-summary" id="rjq-review-summary" aria-live="polite"></div>
         <div class="rjq-review-body" id="rjq-reviewtext" role="region" aria-label="Full quotation with individual product rows"></div>
         <div class="rjq-actions"><button class="rjq-btn rjq-wa" id="rjq-whatsapp" type="button">WhatsApp ${esc(cfg.rep)}</button><button class="rjq-btn" id="rjq-email" type="button">Email ${esc(cfg.rep)}</button><button class="rjq-btn" id="rjq-copy" type="button">Copy quote</button></div>
@@ -2759,53 +2759,105 @@ window.RJ_QUOTE_MAPS.max['3.5']=[{"code":"48053","description":"Waterproof Cotto
     if(buckets.length){
       list.append(reviewHeader('🔩 XR WOODSCREWS',buckets.length+' sizes'));
       for(const it of buckets){const d=screwDetails(it);
-        list.append(reviewRow(d.size,'Code '+it.code+'  ·  '+d.contents,Math.max(0,Number(it.qty)||0)+' Bkt'));
+        list.append(reviewRow(d.size,'Code '+it.code+'  ·  '+d.contents+'  ·  '+(quoteKnownPrice(it)?.unitText||'Price to be confirmed'),Math.max(0,Number(it.qty)||0)+' Bkt'));
       }
     }
     if(others.length){
       list.append(reviewHeader('📦 OTHER PRODUCTS',others.length+' lines'));
       for(const it of others){
-        list.append(reviewRow(String(it.description||'Product').trim(),'Code '+it.code+'  ·  Page '+it.page,Math.max(0,Number(it.qty)||0)+' ×'));
+        list.append(reviewRow(String(it.description||'Product').trim(),'Code '+it.code+'  ·  Page '+it.page+'  ·  '+(quoteKnownPrice(it)?quoteKnownPrice(it).unitText+' = '+quoteMoney(quoteKnownPrice(it).total):'Price to be confirmed'),Math.max(0,Number(it.qty)||0)+' ×'));
       }
     }
-    list.append(reviewElement('p','rjq-p-note','Please check your selection. Prices and delivery will be confirmed by '+cfg.rep+'.'));
+    const cost=quoteCostStatus();
+    const priceSummary=reviewElement('div','rjq-p-total rjq-p-total-neutral');
+    priceSummary.style.marginTop='10px';
+    const totalText=cost.allPriced?'Products (ex VAT) '+quoteMoney(cost.priced):'Final total: Awaiting confirmation';
+    priceSummary.append(reviewElement('span','','PRICE SUMMARY'),reviewElement('strong','',totalText));
+    list.append(priceSummary);
+    list.append(reviewElement('p','rjq-p-note',cost.known
+      ?'Published offers: '+quoteMoney(cost.priced)+' before VAT. Other products, VAT and delivery must be confirmed by '+cfg.rep+'.'
+      :'Prices, VAT and delivery need confirmation from '+cfg.rep+'. No prices have been invented.'));
     list.scrollTop=0;
+  }
+  // Only calculate amounts explicitly published in this catalogue's trade offers.
+  // Never invent ordinary stock prices, VAT, or delivery values.
+  function quoteKnownPrice(it){
+    if(it.gift)return {total:0,unitText:'FREE'};
+    const n=Math.max(0,Number(it.qty)||0), pg=Number(it.page), code=String(it.code||'');
+    const variant=String(it.variant||''), description=String(it.description||'');
+    // Page 5: customer selects one of the exact 10/120 pair promotional tiers.
+    if(pg===5){
+      const offer=variant.match(/^OFFER-(10|120)-£(\d+(?:\.\d{1,2})?)$/);
+      if(offer){const pack=Number(offer[1]),packPrice=Number(offer[2]);
+        if(n>0&&n%pack===0)return {total:Math.round(n/pack*packPrice*100)/100,unitText:'£'+packPrice.toFixed(2)+' per '+pack+' pairs'};
+      }
+    }
+    if(pg===59&&it.unit==='Bkt')return {total:Math.round(n*14.99*100)/100,unitText:'£14.99 per bucket'};
+    // Fixed-price complete promotional bundles, with source-confirmed amounts.
+    const bundles={'RJ9B79':79,'RJ109B5999':59.99,'PROMO-70B':169,'RJ15DEAL':118.80};
+    if(Object.prototype.hasOwnProperty.call(bundles,code))return {total:Math.round(n*bundles[code]*100)/100,unitText:'£'+bundles[code].toFixed(2)+' per bundle'};
+    if(pg===15&&code==='556222')return {total:Math.round(n*5.95*100)/100,unitText:'£5.95 per pack'};
+    return null;
+  }
+  function quoteMoney(n){return '£'+Number(n).toFixed(2)}
+  function quoteCostStatus(){
+    const charged=items.filter(it=>!it.gift&&Number(it.qty)>0);
+    const known=charged.filter(it=>quoteKnownPrice(it)!==null);
+    const priced=known.reduce((sum,it)=>sum+quoteKnownPrice(it).total,0);
+    return {priced,known:known.length,unpriced:charged.length-known.length,allPriced:charged.length>0&&known.length===charged.length};
+  }
+  // Give each basket a readable, stable reference. The number is a local
+  // identifier, not a central order number; Andy confirms the order later.
+  function quoteReference(){
+    const signature=items.map(x=>[x.code,x.page,x.qty,x.variant||'',x.gift?'gift':''].join(':')).join('|');
+    const storageKey='rjq_platinum_order_ref_v1';
+    try{
+      const saved=JSON.parse(sessionStorage.getItem(storageKey)||'null');
+      if(saved&&saved.signature===signature&&typeof saved.ref==='string')return saved.ref;
+    }catch(_){}
+    const date=new Date();
+    const stamp=String(date.getFullYear()).slice(-2)+String(date.getMonth()+1).padStart(2,'0')+String(date.getDate()).padStart(2,'0');
+    const ref='RJ-PP-'+stamp+'-'+Math.random().toString(36).slice(2,6).toUpperCase();
+    try{sessionStorage.setItem(storageKey,JSON.stringify({signature,ref}));}catch(_){}
+    return ref;
   }
   // WhatsApp, email and copy ALL use this SAME human-readable message.
   // No encoded quote links, Base64, hashes, or separate quote.html required.
   function text(){
     const {gifts,buckets,others,total}=reviewGroups();
-    const lines=['*R&J BUILDERS HARDWARE*','*TRADE QUOTE REQUEST*',
-      'For '+cfg.rep+' | '+cfg.label,''];
-    if(gifts.length){
-      lines.push('*🎁 FREE GIFTS ('+gifts.length+')*');
-      for(const gift of gifts){
-        lines.push('• Gift '+gift.code.split('-').pop()+': '+reviewGiftDescription(gift));
-        lines.push('  *FREE*');
-      }
+    const status=quoteCostStatus();
+    const reference=quoteReference();
+    const lines=['*R&J BUILDERS HARDWARE*','*PLATINUM PLUS — CUSTOMER ORDER REQUEST*',
+      '*Quote reference:* '+reference,'*For:* '+cfg.rep+' | '+cfg.label,'', '*PRODUCTS*',''];
+    const linesByGroup=[...gifts,...buckets,...others];
+    if(buckets.length)lines.splice(5,0,'*XR Buckets selected:* '+total,'');
+    for(const item of linesByGroup){
+      const gift=Boolean(item.gift),units=item.unit==='Bkt'?' Bkt':'',count=Math.max(0,Number(item.qty)||0);
+      const name=gift?reviewGiftDescription(item):String(item.description||'Product').trim();
+      const price=quoteKnownPrice(item);
+      const cleanName=name.replace(/\s*·\s*SPECIAL OFFER (?:10|120) PAIRS(?:\s*·\s*£\d+(?:\.\d+)?)?/gi,'').trim();
+      lines.push('• *'+count+units+' ×* '+cleanName);
+      lines.push('  Code '+item.code+' | Page '+quotePageLabel(item.page));
+      if(gift)lines.push('  *FREE GIFT*');
+      else if(price)lines.push('  '+price.unitText+' = *'+quoteMoney(price.total)+'*');
+      else lines.push('  *Price to be confirmed*');
       lines.push('');
     }
-    if(buckets.length){
-      lines.push('*🔩 XR WOODSCREWS*','*TOTAL XR BUCKETS: '+total+'*','');
-      for(const item of buckets){
-        const detail=screwDetails(item);
-        lines.push('• *'+Math.max(0,Number(item.qty)||0)+' Bkt* — '+detail.size);
-        lines.push('  Code '+item.code+' | '+detail.contents,'');
-      }
+    lines.push('*TOTALS*');
+    if(status.allPriced){
+      lines.push('Products (ex VAT): '+quoteMoney(status.priced));
+      lines.push('Delivery: To be confirmed');
+      lines.push('VAT: To be confirmed on final invoice');
+      lines.push('*TOTAL PAYABLE: To be confirmed*');
+    }else{
+      if(status.known)lines.push('Published offer prices included: '+quoteMoney(status.priced)+' (before VAT)');
+      lines.push('Other product prices: Awaiting confirmation');
+      lines.push('Delivery & VAT: To be confirmed');
+      lines.push('*TOTAL PAYABLE: Awaiting final quotation*');
     }
-    if(others.length){
-      lines.push('*📦 OTHER CATALOGUE PRODUCTS*');
-      for(const item of others){
-        const name=String(item.description||'Product').trim();
-        if(item.gift){
-          lines.push('• *FREE GIFT* — '+name);
-        }else{
-          lines.push('• *'+Math.max(0,Number(item.qty)||0)+' ×* '+name);
-        }
-        lines.push('  Code '+item.code+' | Page '+quotePageLabel(item.page),'');
-      }
-    }
-    lines.push('Please confirm prices, stock and delivery.','Thank you!');
+    lines.push('','*CUSTOMER INSTRUCTION*',
+      'Please prepare the final priced quotation for the products listed above. I understand my order is not accepted until I approve that quotation.',
+      'Please send me the final quotation for approval.','', 'Thank you!');
     return lines.join('\n').trim();
   }
 
@@ -2816,7 +2868,7 @@ window.RJ_QUOTE_MAPS.max['3.5']=[{"code":"48053","description":"Waterproof Cotto
   function copyQuote(body){
     if(navigator.clipboard?.writeText){
       navigator.clipboard.writeText(body)
-        .then(()=>{query('rjq-reviewstatus').textContent='Full quote copied. Your basket is still saved.';})
+        .then(()=>{query('rjq-reviewstatus').textContent='Full order request copied. Your basket is still saved.';})
         .catch(()=>copyQuoteFallback(body));
     }else copyQuoteFallback(body);
   }
@@ -2827,7 +2879,7 @@ window.RJ_QUOTE_MAPS.max['3.5']=[{"code":"48053","description":"Waterproof Cotto
     let success=false;
     try{success=document.execCommand('copy')}catch(_){success=false}
     box.remove();
-    query('rjq-reviewstatus').textContent=success?'Full quote copied. Your basket is still saved.':'Please use WhatsApp or Email to send the quote.';
+    query('rjq-reviewstatus').textContent=success?'Full order request copied. Your basket is still saved.':'Please use WhatsApp or Email to send the quote.';
   }
   function send(mode){
     if(!items.length)return;
@@ -2844,7 +2896,7 @@ window.RJ_QUOTE_MAPS.max['3.5']=[{"code":"48053","description":"Waterproof Cotto
       if(opened)opened.opener=null;
       else window.location.href=destination;
     }else if(mode==='email'){
-      const emailUrl='mailto:'+cfg.email+'?subject='+encodeURIComponent('R&J South Wales trade quote request')+'&body='+encodeURIComponent(message);
+      const emailUrl='mailto:'+cfg.email+'?subject='+encodeURIComponent('R&J Platinum Plus customer order request')+'&body='+encodeURIComponent(message);
       if(emailUrl.length>14000){
         query('rjq-reviewstatus').textContent='This is a very large quote. Use Copy quote and paste into an email to avoid missing products.';
         return;
@@ -2857,7 +2909,7 @@ window.RJ_QUOTE_MAPS.max['3.5']=[{"code":"48053","description":"Waterproof Cotto
   // Preview the exact message going to Andy, with WhatsApp bold markers removed
   // from this local preview only (WhatsApp itself renders the bold correctly).
   const newPreview=document.createElement('button');newPreview.type='button';newPreview.className='rjq-btn';
-  newPreview.textContent='👀 Preview WhatsApp message';
+  newPreview.textContent='👀 Preview order message';
   const previewMask=document.createElement('div');previewMask.id='rjq-message-preview';
   previewMask.className='rjq-mask';previewMask.hidden=true;
   previewMask.innerHTML='<section class="rjq-panel" aria-label="WhatsApp message preview" role="dialog" aria-modal="true"><div class="rjq-top"><strong>What Andy receives</strong><button type="button" class="rjq-btn rjq-back" id="rjq-preview-close">← Back</button></div><small style="color:#cce3fa">This is the actual wording in the WhatsApp message, not an encoded link.</small><div class="rjq-review-body" id="rjq-message-preview-text" style="white-space:pre-wrap!important;overflow-y:auto;flex:1 1 auto"></div><button type="button" class="rjq-btn rjq-wa" id="rjq-preview-send">Send on WhatsApp →</button></section>';
@@ -3642,7 +3694,7 @@ new MutationObserver(sync).observe(counter,{childList:true,characterData:true,su
  byId('rjlead-sms').addEventListener('click',()=>send('sms'));
  dialog.addEventListener('click',(e)=>{if(e.target===dialog)closeForm()});
  document.addEventListener('keydown',(e)=>{if(e.key==='Escape'&&!dialog.hidden)closeForm()});
- try{if(localStorage.getItem(key)!=='1')setTimeout(()=>{if(dialog.hidden&&prompt.hidden)prompt.hidden=false},1800)}catch(_){setTimeout(()=>{if(dialog.hidden)prompt.hidden=false},1800)}
+ // Callback form remains available using its existing footer control; no competing auto-popup.
 })();
 </script>
 <script>
@@ -3745,7 +3797,7 @@ if(window.__RJ_FAMILY_QUOTE_UPGRADE_V1__)return;
 window.__RJ_FAMILY_QUOTE_UPGRADE_V1__=true;
 const REP_WA='447836776302', REP_NAME='Andy';
 const API=String(window.RJ_API_URL||'').replace(/\/+$/,'');
-const PROMPT_KEY='rj_andys_south_wales_family_invite_v1';
+const PROMPT_KEY='rj_andys_south_wales_family_invite_v2';
 const CONSENT='Yes, I agree to receive occasional R&J trade deals and catalogue updates from Andy by WhatsApp. I can opt out at any time by replying STOP.';
 const PRIVACY='R&J Builders Hardware, through Andy in South Wales, will use your name and mobile number only to send the WhatsApp trade offers and catalogue updates you request. You can withdraw consent at any time by replying STOP or messaging Andy. Your details are not sold. Records of consent are kept so your choice can be respected.';
 const $=id=>document.getElementById(id);
@@ -3825,48 +3877,25 @@ function buildInvite(){
   if(!safeGet(PROMPT_KEY))window.setTimeout(()=>{
     const quote=$('rjq-overlay'),pick=$('rjq-pick'),review=$('rjq-review');
     if(dialog.hidden && (!quote||quote.hidden)&&(!pick||pick.hidden)&&(!review||review.hidden))nudge.hidden=false;
-  },9000);
-}
-function quoteItems(){try{const q=window.RJQuoteMaster;return q&&typeof q.getBasket==='function'?q.getBasket():null;}catch(_){return null}}
-function qty(x){const n=Number(x.qty??x.quantity??1);return Number.isFinite(n)?Math.max(0,Math.round(n)):1;}
-function quoteText(items){
-  if(!Array.isArray(items)||!items.length)return '';
-  const gifts=items.filter(x=>x.gift),buckets=items.filter(x=>!x.gift&&x.unit==='Bkt'&&Number(x.page)===59),other=items.filter(x=>!x.gift&&!(x.unit==='Bkt'&&Number(x.page)===59));
-  const lines=['R&J BUILDERS HARDWARE','SOUTH WALES — TRADE QUOTE REQUEST','For Andy','',''];
-  if(gifts.length){lines.push('FREE GIFTS');for(const x of gifts){lines.push('• '+(x.description||'Reward')+' — FREE');}lines.push('');}
-  if(buckets.length){lines.push('XR WOODSCREWS');for(const x of buckets){lines.push('• '+qty(x)+' Bkt — '+String(x.description||'XR screws').trim());lines.push('  Code '+String(x.code||'')+' | Page '+String(x.page||'59'));}lines.push('');}
-  if(other.length){lines.push('CATALOGUE PRODUCTS');for(const x of other){const suffix=x.variant?' — '+String(x.variant):'';lines.push('• '+qty(x)+' × '+String(x.description||'Catalogue product').trim()+suffix);lines.push('  Code '+String(x.code||'')+' | Page '+String(x.page??''));}lines.push('');}
-  lines.push('Please confirm prices, availability and delivery. Thank you!');return lines.join('\n').replace(/\n{3,}/g,'\n\n');
-}
-async function shareVia(mode,items){
-  const text=quoteText(items);if(!text)return;
-  const status=$('rjq-reviewstatus');
-  if(mode==='copy'){try{await navigator.clipboard.writeText(text);if(status)status.textContent='Quote copied. Your products are still saved.';}catch(_){if(status)status.textContent='Please use WhatsApp or Email to share the quote.';}return;}
-  let message=text;
-  // Only a configured backend can supply a short reference for longer orders.
-  if(API&&text.length>1800){try{const resp=await fetch(API+'/api/quote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items,text})});
-     if(resp.ok){const data=await resp.json();if(data.url&&/^https:\/\//.test(data.url))message='Hi Andy, my R&J trade quote request is here:\n'+data.url+'\n\nPlease confirm prices and delivery.';}
-  }catch(_){} }
-  if(mode==='whatsapp')window.location.href='https://wa.me/'+REP_WA+'?text='+encodeURIComponent(message);
-  else window.location.href='mailto:andy.davis@rjbh.co.uk?subject='+encodeURIComponent('R&J South Wales quote for Andy')+'&body='+encodeURIComponent(message);
-}
-function bindQuote(){
-  // Hook only existing explicit SEND buttons, never catalogue image taps or code hotspots.
-  document.addEventListener('click',event=>{
-    const button=event.target.closest?.('#rjq-whatsapp,#rjq-email,#rjq-copy');if(!button)return;
-    const items=quoteItems();if(!items)return; // Unknown quote engine: preserve original handlers.
-    if(!items.length)return;
-    event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();
-    const mode=button.id==='rjq-whatsapp'?'whatsapp':button.id==='rjq-email'?'email':'copy';
-    shareVia(mode,items);
-  },true);
+  },2200);
 }
 // Leave the existing verified quote-send buttons in sole control of the
 // WhatsApp/email/copy actions. The duplicate capture-phase handler can
 // otherwise bypass the full-length guard and WhatsApp-readable formatting.
-function start(){installStyle();buildInvite();}
+function start(){
+  installStyle();buildInvite();
+  const entry=$('rjlead-open');
+  if(entry){
+    // The old callback is still reachable via Call; reuse its sixth footer slot for membership.
+    entry.replaceWith(entry.cloneNode(true));
+    const familyBtn=$('rjlead-open');
+    familyBtn.setAttribute('aria-label',"Join Andy's South Wales Family");
+    familyBtn.querySelector('span:last-child').textContent='Join Family';
+    familyBtn.onclick=()=>{hideAfterChoice();document.querySelector('#rj-fam-nudge .rj-fam-yes')?.click()};
+  }
+}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-window.RJFamilyQuote2026={quoteText,cleanMobile};
+window.RJFamilyQuote2026={cleanMobile};
 })();
 
 </script>
