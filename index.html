@@ -2823,6 +2823,34 @@ window.RJ_QUOTE_MAPS.max['3.5']=[{"code":"48053","description":"Waterproof Cotto
   }
   // WhatsApp, email and copy ALL use this SAME human-readable message.
   // No encoded quote links, Base64, hashes, or separate quote.html required.
+  // One-tap handoff for Andy: products and known public prices only. No customer identity.
+  // Full readable product list always remains in the WhatsApp text above this link.
+  function ppDeskLink(reference){
+    try{
+      const rows=items.filter(it=>Number(it.qty)>0).map(it=>{
+        const pg=quotePageLabel(it.page),code=String(it.code||'').trim();
+        const q=Math.round(Number(it.qty));const published=quoteKnownPrice(it);
+        const title=(it.gift?reviewGiftDescription(it):String(it.description||'Catalogue product'))
+          .replace(/\s*·\s*SPECIAL OFFER (?:10|120) PAIRS(?:\s*·\s*£\d+(?:\.\d+)?)?/gi,'').trim();
+        const source=(window.RJ_QUOTE_MAPS?.max?.[String(it.page)]||[]).find(x=>String(x.code)===code);
+        const lookup=String(source?.description||'').trim();
+        // When a selected variant differs from its page lookup, carry the customer's exact description.
+        const custom=(title===lookup)?null:title;
+        const pack=published?.unitText?.match(/per (\d+) pairs/i);
+        const variant=String(it.variant||'');
+        return [pg,code,q,published?Math.round(published.total*100)/100:null,
+          pack?Number(pack[1]):1,custom,it.gift?1:0,String(it.unit||''),
+          variant&&!/^OFFER-\d+-£/.test(variant)?variant:null];
+      });
+      const payload=JSON.stringify({v:1,r:reference,l:rows});
+      const bytes=new TextEncoder().encode(payload);
+      if(bytes.length>8500)return '';
+      let raw='';for(const b of bytes)raw+=String.fromCharCode(b);
+      const encoded=btoa(raw).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+      const url='https://andywdavis.github.io/rj-pp-order-desk.html#q='+encoded;
+      return url.length<=4200?url:'';
+    }catch(_){return ''}
+  }
   function text(){
     const {gifts,buckets,others,total}=reviewGroups();
     const status=quoteCostStatus();
@@ -2855,9 +2883,13 @@ window.RJ_QUOTE_MAPS.max['3.5']=[{"code":"48053","description":"Waterproof Cotto
       lines.push('Delivery & VAT: To be confirmed');
       lines.push('*TOTAL PAYABLE: Awaiting final quotation*');
     }
-    lines.push('','*CUSTOMER INSTRUCTION*',
-      'Please prepare the final priced quotation for the products listed above. I understand my order is not accepted until I approve that quotation.',
-      'Please send me the final quotation for approval.','', 'Thank you!');
+    lines.push('','*NEXT STEP*',
+      'Andy will check any missing prices, stock and delivery, then send me a full quotation for approval.',
+      'This is a request, not an accepted order.');
+    const deskLink=ppDeskLink(reference);
+    if(deskLink)lines.push('','*FOR ANDY — OPEN IN PP ORDER DESK*',deskLink);
+    else lines.push('','*FOR ANDY:* Large order — copy this complete list into your PP Order Desk.');
+    lines.push('','Thank you!');
     return lines.join('\n').trim();
   }
 
@@ -3797,15 +3829,32 @@ if(window.__RJ_FAMILY_QUOTE_UPGRADE_V1__)return;
 window.__RJ_FAMILY_QUOTE_UPGRADE_V1__=true;
 const REP_WA='447836776302', REP_NAME='Andy';
 const API=String(window.RJ_API_URL||'').replace(/\/+$/,'');
-const PROMPT_KEY='rj_andys_south_wales_family_invite_v2';
+const OLD_PROMPT_KEY='rj_andys_south_wales_family_invite_v2';
+const FAMILY_KEY='rj_south_wales_family_status_v3';
+const SESSION_KEY='rj_south_wales_family_seen_visit_v3';
+const DECLINE_MS=14*24*60*60*1000;
 const CONSENT='Yes, I agree to receive occasional R&J trade deals and catalogue updates from Andy by WhatsApp. I can opt out at any time by replying STOP.';
-const PRIVACY='R&J Builders Hardware, through Andy in South Wales, will use your name and mobile number only to send the WhatsApp trade offers and catalogue updates you request. You can withdraw consent at any time by replying STOP or messaging Andy. Your details are not sold. Records of consent are kept so your choice can be respected.';
+const PRIVACY='Andy at R&J Builders Hardware uses the name and mobile number you send on WhatsApp only for the trade offers and catalogue updates you request. Reply STOP at any time to withdraw consent. Your details are not sold. Your WhatsApp message provides Andy with the consent record. This device remembers that you joined; other devices cannot be recognised automatically.';
 const $=id=>document.getElementById(id);
 const cleanName=s=>String(s||'').trim().replace(/\s+/g,' ').slice(0,70);
 function cleanMobile(input){const s=String(input||'').replace(/[\s().-]/g,'');const uk=s.startsWith('0')?'+44'+s.slice(1):s.startsWith('44')?'+'+s:s;return /^\+447\d{9}$/.test(uk)?uk:null;}
 function el(tag,cls,txt){const n=document.createElement(tag);if(cls)n.className=cls;if(txt!==undefined)n.textContent=txt;return n;}
 function safeGet(key){try{return localStorage.getItem(key);}catch(_){return null;}}
 function safeSet(key,value){try{localStorage.setItem(key,value);}catch(_){}}
+function seenVisit(){try{return sessionStorage.getItem(SESSION_KEY)==='1'}catch(_){return window.__RJFamilySeenThisVisit===true}}
+function markSeen(){try{sessionStorage.setItem(SESSION_KEY,'1')}catch(_){window.__RJFamilySeenThisVisit=true}}
+function status(){
+  let obj=null;try{obj=JSON.parse(safeGet(FAMILY_KEY)||'null')}catch(_){}
+  if(obj&&['joined','pending','declined'].includes(obj.kind))return obj;
+  // Old 'No Thanks' and abandoned forms were indefinite. Convert them into a 14-day decline.
+  if(safeGet(OLD_PROMPT_KEY)){const legacy={kind:'declined',time:Date.now()};safeSet(FAMILY_KEY,JSON.stringify(legacy));return legacy;}
+  return {kind:'new',time:0};
+}
+function setStatus(kind){safeSet(FAMILY_KEY,JSON.stringify({kind,time:Date.now()}));}
+function eligible(){const x=status();return x.kind!=='joined'&&(x.kind==='pending'||x.kind==='new'||Date.now()-x.time>=DECLINE_MS)}
+function decline(){setStatus('declined');markSeen();const n=$('rj-fam-nudge');if(n)n.hidden=true;}
+function joined(){setStatus('joined');markSeen();const n=$('rj-fam-nudge');if(n)n.hidden=true;const b=$('rjlead-open');if(b){b.hidden=true;b.style.display='none';const bar=$('contactBar');if(bar)bar.style.gridTemplateColumns='repeat(5,minmax(0,1fr))';}}
+
 function installStyle(){const style=el('style');style.id='rj-fam-styles';style.textContent=`
 #rj-fam-nudge,#rj-fam-dialog{font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;z-index:2147483000;box-sizing:border-box}
 #rj-fam-nudge *,#rj-fam-dialog *{box-sizing:border-box}
@@ -3833,7 +3882,7 @@ function installStyle(){const style=el('style');style.id='rj-fam-styles';style.t
 @media (max-height:580px){#rj-fam-nudge{bottom:12px}}
 #rjlead-invite{display:none!important}
 `;document.head.append(style);}
-function hideAfterChoice(){if($('rj-fam-nudge'))$('rj-fam-nudge').hidden=true;safeSet(PROMPT_KEY,'1');}
+function hideAfterChoice(){if($('rj-fam-nudge'))$('rj-fam-nudge').hidden=true;markSeen();}
 function buildInvite(){
   if($('rj-fam-nudge'))return;
   const nudge=el('aside');nudge.id='rj-fam-nudge';nudge.hidden=true;nudge.setAttribute('aria-label','Optional South Wales Family invitation');
@@ -3854,10 +3903,17 @@ function buildInvite(){
   form.append(lname,name,lphone,phone,consent,error,submit,dismiss);card.append(heading,intro,form);dialog.append(card);
   document.body.append(nudge,dialog);
   const close=()=>{dialog.hidden=true;document.body.style.removeProperty('overflow')};
-  yes.addEventListener('click',()=>{hideAfterChoice();dialog.hidden=false;document.body.style.overflow='hidden';name.focus({preventScroll:true})});
-  no.addEventListener('click',hideAfterChoice);dismiss.addEventListener('click',()=>{hideAfterChoice();close()});
-  dialog.addEventListener('click',e=>{if(e.target===dialog){hideAfterChoice();close()}});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!dialog.hidden){hideAfterChoice();close()}});
+  const showForm=()=>{hideAfterChoice();dialog.hidden=false;document.body.style.overflow='hidden';name.focus({preventScroll:true})};
+  const showPending=()=>{nudge.querySelector('strong').textContent='DID YOU SEND YOUR JOIN MESSAGE?';
+    nudge.querySelector('p').textContent='If you sent your WhatsApp to Andy, we won’t ask you again on this device.';
+    yes.textContent='YES, SENT IT';no.textContent='NOT YET';
+    yes.onclick=()=>{joined()};no.onclick=()=>{decline()};
+    nudge.hidden=false;markSeen();};
+  yes.addEventListener('click',()=>{if(status().kind!=='pending')showForm()});
+  no.addEventListener('click',()=>{if(status().kind!=='pending')decline()});
+  dismiss.addEventListener('click',()=>{decline();close()});
+  dialog.addEventListener('click',e=>{if(e.target===dialog){decline();close()}});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!dialog.hidden){decline();close()}});
   form.addEventListener('submit',async e=>{
     e.preventDefault();error.textContent='';const person=cleanName(name.value),number=cleanMobile(phone.value);
     if(person.length<2){error.textContent='Please enter your name.';name.focus();return;}
@@ -3866,18 +3922,31 @@ function buildInvite(){
     if(API){
       submit.disabled=true;submit.textContent='ADDING YOU...';
       try{const res=await fetch(API+'/api/lead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});if(!res.ok)throw Error('Not received');
-        hideAfterChoice();card.replaceChildren(el('h2','','YOU’RE IN! 🎉'),el('p','rj-fam-intro',"Welcome to my South Wales Family. See you around the catalogue!"));
+        joined();card.replaceChildren(el('h2','','YOU’RE IN! 🎉'),el('p','rj-fam-intro',"Welcome to my South Wales Family. See you around the catalogue!"));
         const back=el('button','rj-fam-dismiss','Back to catalogue');back.type='button';back.addEventListener('click',close);card.append(back);return;
       }catch(_){error.textContent='Could not save online. You can still join by sending me a WhatsApp.';submit.textContent='SEND JOIN REQUEST ON WHATSAPP';submit.disabled=false;}
     }
     const message=['Hi Andy, please add me to your South Wales trade family.','', 'Name: '+person,'Mobile: '+number,'',CONSENT,'Consent date: '+new Date().toISOString().slice(0,10)].join('\n');
-    hideAfterChoice();close();window.location.href='https://wa.me/'+REP_WA+'?text='+encodeURIComponent(message);
+    setStatus('pending');hideAfterChoice();close();
+    window.location.href='https://wa.me/'+REP_WA+'?text='+encodeURIComponent(message);
   });
   // This is a small, dismissible prompt; it never steals a zoom or code tap.
-  if(!safeGet(PROMPT_KEY))window.setTimeout(()=>{
+  function maybeShow(){
+    if(seenVisit()||!eligible())return;
     const quote=$('rjq-overlay'),pick=$('rjq-pick'),review=$('rjq-review');
-    if(dialog.hidden && (!quote||quote.hidden)&&(!pick||pick.hidden)&&(!review||review.hidden))nudge.hidden=false;
-  },2200);
+    if(dialog.hidden && (!quote||quote.hidden)&&(!pick||pick.hidden)&&(!review||review.hidden)){
+      if(status().kind==='pending')showPending();else{nudge.hidden=false;markSeen()}
+    }
+  }
+  window.setTimeout(maybeShow,2200);
+  // When the customer returns from WhatsApp, confirm it was actually sent.
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden&&status().kind==='pending'){
+      // A pending send must not be mistaken for confirmed membership.
+      try{sessionStorage.removeItem(SESSION_KEY)}catch(_){window.__RJFamilySeenThisVisit=false}
+      window.setTimeout(maybeShow,400);
+    }
+  });
 }
 // Leave the existing verified quote-send buttons in sole control of the
 // WhatsApp/email/copy actions. The duplicate capture-phase handler can
@@ -3891,7 +3960,17 @@ function start(){
     const familyBtn=$('rjlead-open');
     familyBtn.setAttribute('aria-label',"Join Andy's South Wales Family");
     familyBtn.querySelector('span:last-child').textContent='Join Family';
-    familyBtn.onclick=()=>{hideAfterChoice();document.querySelector('#rj-fam-nudge .rj-fam-yes')?.click()};
+    familyBtn.onclick=()=>{
+      const n=$('rj-fam-nudge');const dlg=$('rj-fam-dialog');
+      if(status().kind==='joined')return;
+      // The footer is always available for someone who changes their mind.
+      n.querySelector('strong').textContent="JOIN ANDY'S SOUTH WALES FAMILY!";
+      n.querySelector('p').textContent='Be first to hear about my latest R&J trade deals. Just your name and mobile!';
+      n.querySelector('.rj-fam-yes').textContent='YES, COUNT ME IN';
+      const yes=n.querySelector('.rj-fam-yes');yes.onclick=null;
+      if(dlg){hideAfterChoice();dlg.hidden=false;document.body.style.overflow='hidden';$('rj-fam-name').focus({preventScroll:true})}
+    };
+    if(status().kind==='joined')joined();
   }
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
