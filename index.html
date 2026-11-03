@@ -2654,7 +2654,7 @@ window.RJ_QUOTE_MAPS.max['3.5']=[{"code":"48053","description":"Waterproof Cotto
     const sourceDup=(pg===109&&code==='47057');
     const sourceDesc=String(desc||opts.description||valid?.description||'');
     const variant=sourceDup?(/soudal\s*swipex/i.test(sourceDesc)?'Soudal Swipex — SOURCE CODE TO CONFIRM':'Giant Wonder Wipes — SOURCE CODE TO CONFIRM'):String(opts.variant||'');
-    const safeDesc=String(sourceDup?(sourceDesc||valid?.description):opts.description||valid?.description||('Catalogue page '+pg));
+    const safeDesc=String(sourceDup?(sourceDesc||valid?.description):opts.description||valid?.description||sourceDesc||('Catalogue page '+pg));
     const step=productPackStep(code,pg);
     const nSelected=Math.max(1,Math.min(99,parseInt(opts.quantity,10)||1));
     const existingIndex=items.findIndex(i=>i.code===code&&Number(i.page)===pg&&String(i.variant||'')===variant);
@@ -2794,7 +2794,7 @@ window.RJ_QUOTE_MAPS.max['3.5']=[{"code":"48053","description":"Waterproof Cotto
     }
     if(pg===59&&it.unit==='Bkt')return {total:Math.round(n*14.99*100)/100,unitText:'£14.99 per bucket'};
     // Fixed-price complete promotional bundles, with source-confirmed amounts.
-    const bundles={'RJ9B79':79,'RJ109B5999':59.99,'PROMO-70B':169,'RJ15DEAL':118.80};
+    const bundles={'RJ9B79':79,'RJ109B5999':59.99,'PROMO-70B':169,'RJ15DEAL':118.80,'RJ3BUNDLE':99.99};
     if(Object.prototype.hasOwnProperty.call(bundles,code))return {total:Math.round(n*bundles[code]*100)/100,unitText:'£'+bundles[code].toFixed(2)+' per bundle'};
     if(pg===15&&code==='556222')return {total:Math.round(n*5.95*100)/100,unitText:'£5.95 per pack'};
     return null;
@@ -2825,74 +2825,60 @@ window.RJ_QUOTE_MAPS.max['3.5']=[{"code":"48053","description":"Waterproof Cotto
   // No encoded quote links, Base64, hashes, or separate quote.html required.
   // One-tap handoff for Andy: products and known public prices only. No customer identity.
   // Full readable product list always remains in the WhatsApp text above this link.
+  // Compact order link: only the relevant codes, quantities, approved offers and
+  // exceptional descriptions. No contact details and no long Base64 payload.
+  // The desk also accepts earlier #q= links for customers who already sent one.
   function ppDeskLink(reference){
     try{
-      const rows=items.filter(it=>Number(it.qty)>0).map(it=>{
+      const enc=s=>encodeURIComponent(String(s??'')).replace(/~/g,'%7E');
+      const parts=[enc(reference)];
+      const specialNames=new Set(['RJ3BUNDLE','RJ9B79','RJ109B5999','PROMO-70B','RJ15DEAL']);
+      for(const it of items){
+        const q=Math.round(Number(it.qty));if(!(q>0))continue;
         const pg=quotePageLabel(it.page),code=String(it.code||'').trim();
-        const q=Math.round(Number(it.qty));const published=quoteKnownPrice(it);
-        const title=(it.gift?reviewGiftDescription(it):String(it.description||'Catalogue product'))
-          .replace(/\s*·\s*SPECIAL OFFER (?:10|120) PAIRS(?:\s*·\s*£\d+(?:\.\d+)?)?/gi,'').trim();
+        if(!code||code.length>55||q>999999)return '';
+        const known=quoteKnownPrice(it);
+        const published=known?Math.round(known.total*100):'';
+        const packText=known?.unitText?.match(/per (\d+) pairs/i);
+        const pack=packText?Number(packText[1]):1;
         const source=(window.RJ_QUOTE_MAPS?.max?.[String(it.page)]||[]).find(x=>String(x.code)===code);
-        const lookup=String(source?.description||'').trim();
-        // When a selected variant differs from its page lookup, carry the customer's exact description.
-        const custom=(title===lookup)?null:title;
-        const pack=published?.unitText?.match(/per (\d+) pairs/i);
+        const title=String(it.description||'Catalogue item').replace(/\s*·\s*SPECIAL OFFER (?:10|120) PAIRS(?:\s*·\s*£\d+(?:\.\d+)?)?/gi,'').trim();
+        // Preserve descriptions when the source-code map doesn't cover a code,
+        // or when an explicitly chosen variant has its own product description.
+        const custom=source?.description===title||specialNames.has(code)?'':title.slice(0,160);
         const variant=String(it.variant||'');
-        return [pg,code,q,published?Math.round(published.total*100)/100:null,
-          pack?Number(pack[1]):1,custom,it.gift?1:0,String(it.unit||''),
-          variant&&!/^OFFER-\d+-£/.test(variant)?variant:null];
-      });
-      const payload=JSON.stringify({v:1,r:reference,l:rows});
-      const bytes=new TextEncoder().encode(payload);
-      if(bytes.length>8500)return '';
-      let raw='';for(const b of bytes)raw+=String.fromCharCode(b);
-      const encoded=btoa(raw).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-      const url='https://andywdavis.github.io/rj-pp-order-desk.html#q='+encoded;
-      return url.length<=4200?url:'';
+        const variantText=variant&&!/^OFFER-\d+-£/.test(variant)&&!specialNames.has(code)?variant.slice(0,80):'';
+        const columns=[pg,code,q,published,pack>1?pack:'',it.gift?'G':'',it.unit==='Bkt'?'B':'',custom,variantText];
+        while(columns.length>3&&columns[columns.length-1]==='')columns.pop();
+        parts.push(columns.map(enc).join(','));
+      }
+      if(parts.length<2||parts.length>121)return '';
+      const url='https://andywdavis.github.io/rj-pp-order-desk.html#o='+parts.join('~');
+      return url.length<=4000?url:'';
     }catch(_){return ''}
   }
+  // A customer needs one clean message, not an internal sales document.
   function text(){
-    const {gifts,buckets,others,total}=reviewGroups();
-    const status=quoteCostStatus();
-    const reference=quoteReference();
-    const lines=['*R&J BUILDERS HARDWARE*','*PLATINUM PLUS — CUSTOMER ORDER REQUEST*',
-      '*Quote reference:* '+reference,'*For:* '+cfg.rep+' | '+cfg.label,'', '*PRODUCTS*',''];
-    const linesByGroup=[...gifts,...buckets,...others];
-    if(buckets.length)lines.splice(5,0,'*XR Buckets selected:* '+total,'');
-    for(const item of linesByGroup){
-      const gift=Boolean(item.gift),units=item.unit==='Bkt'?' Bkt':'',count=Math.max(0,Number(item.qty)||0);
-      const name=gift?reviewGiftDescription(item):String(item.description||'Product').trim();
-      const price=quoteKnownPrice(item);
-      const cleanName=name.replace(/\s*·\s*SPECIAL OFFER (?:10|120) PAIRS(?:\s*·\s*£\d+(?:\.\d+)?)?/gi,'').trim();
-      lines.push('• *'+count+units+' ×* '+cleanName);
-      lines.push('  Code '+item.code+' | Page '+quotePageLabel(item.page));
-      if(gift)lines.push('  *FREE GIFT*');
-      else if(price)lines.push('  '+price.unitText+' = *'+quoteMoney(price.total)+'*');
-      else lines.push('  *Price to be confirmed*');
-      lines.push('');
+    const {gifts,buckets,others}=reviewGroups();
+    const reference=quoteReference(),status=quoteCostStatus();
+    const lines=['*R&J · SOUTH WALES*','*PLATINUM PLUS — QUOTE REQUEST*',
+      'Ref: '+reference,'','*MY PRODUCTS*'];
+    for(const item of [...gifts,...buckets,...others]){
+      const q=Math.max(0,Number(item.qty)||0);
+      const name=item.code==='RJ3BUNDLE'?'5-roll mixed protection film deal':
+        String(item.gift?reviewGiftDescription(item):item.description||'Catalogue product')
+        .replace(/\s*·\s*SPECIAL OFFER (?:10|120) PAIRS(?:\s*·\s*£\d+(?:\.\d+)?)?/gi,'').trim();
+      const amount=quoteKnownPrice(item);
+      const price=item.gift?'FREE':amount?quoteMoney(amount.total)+' offer':'price TBC';
+      lines.push('• '+q+(item.unit==='Bkt'?' buckets':' ×')+' '+name+' ('+item.code+', p'+quotePageLabel(item.page)+') — '+price);
     }
-    lines.push('*TOTALS*');
-    if(status.allPriced){
-      lines.push('Products (ex VAT): '+quoteMoney(status.priced));
-      lines.push('Delivery: To be confirmed');
-      lines.push('VAT: To be confirmed on final invoice');
-      lines.push('*TOTAL PAYABLE: To be confirmed*');
-    }else{
-      if(status.known)lines.push('Published offer prices included: '+quoteMoney(status.priced)+' (before VAT)');
-      lines.push('Other product prices: Awaiting confirmation');
-      lines.push('Delivery & VAT: To be confirmed');
-      lines.push('*TOTAL PAYABLE: Awaiting final quotation*');
-    }
-    lines.push('','*NEXT STEP*',
-      'Andy will check any missing prices, stock and delivery, then send me a full quotation for approval.',
-      'This is a request, not an accepted order.');
-    const deskLink=ppDeskLink(reference);
-    if(deskLink)lines.push('','*FOR ANDY — OPEN IN PP ORDER DESK*',deskLink);
-    else lines.push('','*FOR ANDY:* Large order — copy this complete list into your PP Order Desk.');
-    lines.push('','Thank you!');
+    if(status.known)lines.push('','Published offers: '+quoteMoney(status.priced)+' ex VAT');
+    lines.push('','Please send my final price and delivery for approval.');
+    const link=ppDeskLink(reference);
+    if(link)lines.push('','*FOR ANDY — OPEN PP QUOTE*',link);
+    else lines.push('','For Andy: please copy this list into the PP Order Desk.');
     return lines.join('\n').trim();
   }
-
   function startNew(confirmFirst=true){if(confirmFirst&&items.length&&!confirm('Start a new quote? The current list will be cleared.'))return;items=[];window.RJXR59?.resetRewards?.();persist();render();query('rjq-review').hidden=true;query('rjq-overlay').hidden=false}
   function handedOff(){save(backupKey,{items:items.map(i=>({...i})),time:Date.now()});items=[];window.RJXR59?.resetRewards?.();persist();query('rjq-review').hidden=true;query('rjq-overlay').hidden=true;query('rjq-undo').hidden=false;}
   // Send the actual readable product list, not a machine-encoded link.
@@ -3926,7 +3912,7 @@ function buildInvite(){
         const back=el('button','rj-fam-dismiss','Back to catalogue');back.type='button';back.addEventListener('click',close);card.append(back);return;
       }catch(_){error.textContent='Could not save online. You can still join by sending me a WhatsApp.';submit.textContent='SEND JOIN REQUEST ON WHATSAPP';submit.disabled=false;}
     }
-    const message=['Hi Andy, please add me to your South Wales trade family.','', 'Name: '+person,'Mobile: '+number,'',CONSENT,'Consent date: '+new Date().toISOString().slice(0,10)].join('\n');
+    const message=['Hi Andy! Please add me to your South Wales Family.', 'Name: '+person,'Mobile: '+number,'', 'I agree to occasional R&J trade offers by WhatsApp. Reply STOP to opt out.', 'Consent: '+new Date().toISOString().slice(0,10)].join('\n');
     setStatus('pending');hideAfterChoice();close();
     window.location.href='https://wa.me/'+REP_WA+'?text='+encodeURIComponent(message);
   });

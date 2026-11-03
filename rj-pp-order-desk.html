@@ -34,6 +34,7 @@ h2{font-size:clamp(23px,6vw,30px);line-height:1.15;letter-spacing:-.4px;margin:2
 .quick-mode .header h1{font-size:21px;margin:10px 0 2px}
 .quick-mode .notice{padding:9px 12px;font-size:12px;margin:8px 0}
 .quick-mode main{margin-top:10px}
+.quick-mode .notice{display:none}
 .quick-mode .meta{margin:9px 0;gap:6px}
 .quick-mode .meta .tile{padding:7px 10px}
 .quick-mode .meta input{font-size:13px}
@@ -99,6 +100,51 @@ function importOrder(){const raw=$('incoming').value.trim(),p=lineParse(raw);if(
 
 function deepLinkImport(){
   const hash=location.hash;
+  if(hash.startsWith('#o=')){
+    try{
+      if(hash.length>4100)throw Error('Order link too long');
+      const dec=s=>decodeURIComponent(String(s||''));
+      const parts=hash.slice(3).split('~');
+      const ref=dec(parts.shift());
+      if(!/^RJ-PP-[A-Z0-9-]{3,35}$/i.test(ref)||parts.length<1||parts.length>120)throw Error('Invalid order');
+      const special={'RJ3BUNDLE':'5-roll mixed protection film deal',
+        'RJ9B79':'Mixed trade bundle','RJ109B5999':'Professional cleaning bundle',
+        'PROMO-70B':'Souda Bond bundle','RJ15DEAL':'Wall starter bundle'};
+      const result=parts.map(part=>{
+        const columns=part.split(',').map(dec);
+        const [pg,code,qty,cents,pack,gift,unit,custom,variant]=columns;
+        const q=Number(qty),pk=Number(pack)||1,isGift=gift==='G';
+        if(!pg||pg.length>8||!code||code.length>60||!Number.isSafeInteger(q)||q<1||q>999999||
+           !Number.isSafeInteger(pk)||pk<1||pk>999999)throw Error('Invalid product');
+        const amount=cents?Number(cents):null;
+        if(amount!==null&&(!Number.isSafeInteger(amount)||amount<0||amount>1e9))throw Error('Invalid price');
+        const lookupPage=pg.toUpperCase()==='3B'?'3.5':pg;
+        const title=String(custom||RJ_PP_CATALOGUE_LOOKUP[lookupPage]?.[code]||special[code]||('Code '+code+' — verify description')).trim();
+        if(!title||title.length>240)throw Error('Invalid description');
+        const unitPrice=isGift?0:amount===null?null:amount/100/q;
+        const description=title+(variant&&!title.includes(variant)?' — '+variant.slice(0,80):'')+
+          (unit==='B'&&!/bucket|\bbkt\b/i.test(title)?' (bucket)':'');
+        return {id:idGen(),code,page:pg,description,qty:q,requested:q,
+          unitPrice,originalPrice:unitPrice,pack:pk,gift:isGift,wasPriced:amount!==null,
+          offer:pk>1&&amount!==null?currency((amount/100)/(q/pk))+' per '+pk+' pairs':''};
+      });
+      trial=false;imported=true;rows=result;originalRef=ref;
+      $('ref').value=ref;$('customer').value='Trade customer';
+      $('source').textContent='One-tap WhatsApp order';$('delivery').value='';
+      $('stockCheck').checked=false;$('approvalCheck').checked=false;
+      $('importPanel').open=false;document.body.classList.add('quick-mode');
+      $('importStatus').textContent=result.length+' products loaded.';
+      $('fastQuote').hidden=false;
+      try{history.replaceState(null,'',location.pathname+location.search)}catch(_){}
+      recalc();
+      $('fastStatus').textContent='✓ '+result.length+' products ready. Fill missing prices and delivery, then tap Send.';
+      setTimeout(()=>{const missing=[...document.querySelectorAll('#items input[id^="price"]')].find(x=>!x.value);
+        const node=missing||$('fastQuote');node.scrollIntoView({block:'center',behavior:'instant'});
+      },80);
+      return;
+    }catch(e){$('importStatus').textContent='Could not open the link: '+e.message+'. Paste the WhatsApp message below instead.';$('importPanel').open=true;}
+    return;
+  }
   if(!hash.startsWith('#q='))return;
   try{
     const val=hash.slice(3);
@@ -112,8 +158,10 @@ function deepLinkImport(){
       const [page,code,quantity,amount,pack,custom,gift,unit,variant]=x;
       const pg=String(page),cd=String(code),q=Number(quantity);
       if(pg.length>8||cd.length>60||!Number.isSafeInteger(q)||q<1||q>999999)throw Error('Invalid item');
-      const title=String(custom||RJ_PP_CATALOGUE_LOOKUP[pg]?.[cd]||'').trim();
-      if(!title||title.length>240)throw Error('Unknown product '+cd);
+      const actualPage=pg.toUpperCase()==='3B'?'3.5':pg;
+      const special={'RJ3BUNDLE':'5-roll mixed protection film deal','RJ9B79':'Mixed trade bundle','RJ109B5999':'Professional cleaning bundle','PROMO-70B':'Souda Bond bundle','RJ15DEAL':'Wall starter bundle'};
+      const title=String(custom||RJ_PP_CATALOGUE_LOOKUP[actualPage]?.[cd]||special[cd]||('Code '+cd+' — verify description')).trim();
+      if(title.length>240)throw Error('Description too long '+cd);
       const isGift=gift===1,price=(amount===null||amount===undefined)?null:Number(amount);
       if(price!==null&&(!Number.isFinite(price)||price<0||price>10000000))throw Error('Invalid offer');
       const pk=Number(pack)||1;if(!Number.isSafeInteger(pk)||pk<1||pk>999999)throw Error('Invalid pack');
