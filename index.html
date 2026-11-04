@@ -3012,10 +3012,11 @@ window.RJ_QUOTE_MAPS.max['3.5']=[{"code":"48053","description":"Waterproof Cotto
         query('rjq-reviewstatus').textContent='This is a very large quote. Use Copy quote and paste into WhatsApp, so no products are lost.';
         return;
       }
+      // Stay in the existing browser tab: opening a new one leaves Safari users
+      // looking at an empty page after WhatsApp hands back control.
+      // WhatsApp still requires the customer to press its own Send arrow.
       window.RJQuoteSendStatus?.arm('request');
-      const opened=window.open(destination,'_blank');
-      if(opened)opened.opener=null;
-      else window.location.href=destination;
+      window.location.assign(destination);
     }else if(mode==='email'){
       const emailUrl='mailto:'+cfg.email+'?subject='+encodeURIComponent('R&J trade customer order request')+'&body='+encodeURIComponent(message);
       if(emailUrl.length>14000){
@@ -4117,7 +4118,7 @@ window.RJFamilyQuote2026={cleanMobile};
     accepted:['QUOTATION CONFIRMED','Your acceptance has been sent back to Andy, subject to his stock and delivery confirmation.'],
     changes:['CHANGES SENT','Your requested quotation changes have been sent to Andy.']
   };
-  let pending=null,wasAway=false,finished=false;
+  let pending=null,wasAway=false,finished=false,lastConfirmedKind='';
   const get=id=>document.getElementById(id);
   function read(){try{const o=JSON.parse(sessionStorage.getItem(KEY)||'null');return o&&names[o.kind]&&Number.isFinite(o.time)&&Date.now()-o.time<20*60*1000?o:null;}catch(e){return null;}}
   function clear(){pending=null;wasAway=false;try{sessionStorage.removeItem(KEY);}catch(e){}}
@@ -4134,15 +4135,29 @@ window.RJFamilyQuote2026={cleanMobile};
     if(wasAway||Date.now()-pending.time>1300){renderConfirm();}
   }
   function confirm(){if(!pending)return;
-    const [heading,description]=names[pending.kind];
-    clear();finished=true;
+    const kind=pending.kind;
+    const [heading,description]=names[kind];
+    clear();finished=true;lastConfirmedKind=kind;
     get('rj-flow-title').textContent='✓ '+heading;
-    get('rj-flow-description').textContent=description;
-    get('rj-flow-yes').textContent='CONTINUE';
+    get('rj-flow-description').textContent=kind==='request'
+      ? 'Your quote request is with Andy. Your selected products are saved if you want to shop again.'
+      : description;
+    get('rj-flow-yes').textContent=kind==='request'?'← BACK TO CATALOGUE':'CONTINUE';
     get('rj-flow-no').hidden=true;
     get('rj-flow-confirm').hidden=false;
   }
-  function close(){get('rj-flow-confirm').hidden=true;get('rj-flow-no').hidden=false;finished=false;}
+  function close(){
+    get('rj-flow-confirm').hidden=true;
+    get('rj-flow-no').hidden=false;
+    // A customer's completed quote request must return to the actual page they
+    // were browsing, not to the review or preview sheet. Keep the basket saved.
+    if(lastConfirmedKind==='request'){
+      for(const id of ['rjq-review','rjq-overlay','rjq-message-preview']){
+        const overlay=get(id);if(overlay)overlay.hidden=true;
+      }
+    }
+    lastConfirmedKind='';finished=false;
+  }
   window.RJQuoteSendStatus={arm,cancel};
   get('rj-flow-yes').addEventListener('click',function(){if(finished){close();return;}confirm();});
   get('rj-flow-no').addEventListener('click',function(){cancel();close();});
