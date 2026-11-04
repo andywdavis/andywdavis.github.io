@@ -651,12 +651,11 @@ nav[aria-label="Catalogue page navigation"] .nav-strip {
   font-size:clamp(16px,4.2vw,21px)!important;
 }
 </style>
-<style id="rjq-original-product-code-visibility-fix">
-/* R&J original artwork is authoritative: do not draw a second code pill over
-   printed product codes. The extra canvas caused duplicated, misaligned and
-   overflowing numbers on pages including 3, 4 and 8. Existing transparent
-   quote-code hotspots and all underlying quote functions are left intact. */
-#rjq-gold-canvas { display:none !important; visibility:hidden !important; pointer-events:none !important; }
+<style id="rjq-gold-labels-safe-restore">
+/* Restore gold code labels on pages without baked-in gold badges.
+   Approved page artwork, genuine product codes, and transparent quote hotspots
+   remain untouched. The painter below skips photographed gold badges. */
+#rjq-gold-canvas { pointer-events:none !important; }
 </style>
 </head><body>
 <main id="stage" aria-label="R and J catalogue pages. Swipe to turn, pinch to zoom. Press and hold arrows to flip quickly.">
@@ -3249,10 +3248,36 @@ function buttonTone(x,y){
   return (d[0]>145&&d[1]>105&&d[2]<150&&d[0]>d[2]*1.45)?'navy':'gold';
  }catch(e){return 'gold'}
 }
+/* Artwork-aware protection: where the photographed page already shows a
+   gold label, never repaint it. Especially important on coloured marker codes. */
+const printedGoldSample=document.createElement('canvas');
+printedGoldSample.width=256; printedGoldSample.height=384;
+const printedGoldCtx=printedGoldSample.getContext('2d',{willReadFrequently:true});
+let printedGoldSrc='';
+function hasPrintedGold(v){
+ if(!printedGoldCtx||!pageArt.complete||!pageArt.naturalWidth)return false;
+ try{
+  const src=pageArt.currentSrc||pageArt.src;
+  if(src!==printedGoldSrc){
+   printedGoldCtx.clearRect(0,0,256,384);
+   printedGoldCtx.drawImage(pageArt,0,0,256,384);
+   printedGoldSrc=src;
+  }
+  const x=Math.max(10,Math.min(245,Math.round(Number(v.x)*2.56)));
+  const y=Math.max(5,Math.min(378,Math.round(Number(v.y)*3.84)));
+  let total=0,gold=0;
+  for(let dy=-3;dy<=3;dy+=1)for(let dx=-8;dx<=8;dx+=2){
+   const px=printedGoldCtx.getImageData(x+dx,y+dy,1,1).data;
+   total++;
+   if(px[0]>145&&px[1]>86&&px[1]<246&&px[2]<145&&px[0]>px[2]*1.48&&px[1]>px[2]*1.35)gold++;
+  }
+  return gold/total>.31;
+ }catch(_){return false;}
+}
 function pill(spots){
  c.clearRect(0,0,W,H);
- if(!spots?.length || ['7','23','24','25','26','27','28','29','30','31','33','34','35','36','37','38','39','49','75','76','77','78','79','80','81','82','83','84','85','86','87','88','89','90','91','92','93','102','103','104','105','106','107','108','109'].includes(codePage()))return; // artwork already has gold codes; do not paint another layer // Pages 24 and 49 have their own precisely drawn code buttons.
- const items=spots.filter(v=>!(codePage()==='26' && Number(v.y)>58 && Number(v.y)<63 && Number(v.x)<40))
+ if(!spots?.length || ['3','4','5','8','7','23','24','25','26','27','28','29','30','31','33','34','35','36','37','38','39','40','41','42','43','49','62','64','69','71','72','73','74','75','76','77','78','79','80','81','82','83','84','85','86','87','88','89','90','91','92','93','102','103','104','105','106','107','108','109','110','111','112','113','114','115','116','117','118'].includes(codePage()))return; // artwork already has gold codes; do not paint another layer // Pages 24 and 49 have their own precisely drawn code buttons.
+ const items=spots.filter(v=>!(codePage()==='26' && Number(v.y)>58 && Number(v.y)<63 && Number(v.x)<40) && !hasPrintedGold(v))
  .map((v,i)=>({code:String(v.code||'').trim().toUpperCase(),x:Number(v.x)*W/100,y:Number(v.y)*H/100,i}))
  .filter(a=>/^[0-9A-Z][0-9A-Z.\/-]{3,19}$/.test(a.code)&&Number.isFinite(a.x)&&Number.isFinite(a.y));
  for(const a of items){
@@ -3261,6 +3286,7 @@ function pill(spots){
   const dxValues=items.filter(b=>b!==a&&Math.abs(b.y-a.y)<25).map(b=>Math.abs(b.x-a.x));
   const dx=dxValues.length?Math.min(...dxValues):9999;
   const h=Math.max(10,Math.min(25,dy===9999?23:dy-7));
+  if(h<12)continue; // retain original printed code rather than a microscopic pill
   let w=Math.max(46,12+a.code.length*9.6);
   if(dx<140)w=Math.max(34,Math.min(w,dx-8));
   const x=Math.max(1,Math.min(W-w-1,a.x-w/2)),y=Math.max(1,Math.min(H-h-2,a.y-h/2));
