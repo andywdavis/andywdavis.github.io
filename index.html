@@ -657,6 +657,18 @@ nav[aria-label="Catalogue page navigation"] .nav-strip {
    remain untouched. The painter below skips photographed gold badges. */
 #rjq-gold-canvas { pointer-events:none !important; }
 </style>
+
+<style id="rj-flow-send-confirm-style">
+#rj-flow-confirm[hidden]{display:none!important}
+#rj-flow-confirm{position:fixed!important;inset:0!important;z-index:2147483000!important;background:#020812d9;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif}
+#rj-flow-confirm *{box-sizing:border-box}
+#rj-flow-confirm .rj-flow-card{width:min(100%,390px);border:2px solid #e3bb52;border-radius:18px;background:linear-gradient(160deg,#15283b,#080e18);color:white;padding:23px 20px 19px;text-align:center;box-shadow:0 0 0 3px #6645147a,0 20px 60px #000c}
+#rj-flow-confirm h2{font-size:clamp(23px,6vw,30px);color:#ffdf74;margin:0 0 12px;font-weight:950;line-height:1.15;letter-spacing:.015em}
+#rj-flow-confirm p{font-size:15px;line-height:1.4;color:#f2f4f6;margin:0 0 15px}
+#rj-flow-confirm .rj-flow-actions{display:grid;gap:9px}
+#rj-flow-confirm button{display:block;width:100%;border:1px solid #ffec9b;border-radius:11px;padding:12px 10px;min-height:48px;font-size:16px;font-weight:900;line-height:1.2;touch-action:manipulation;color:#081626;background:linear-gradient(#ffed93,#e8b93b)}
+#rj-flow-confirm button.rj-flow-back{background:#283d51;color:#f5f8fd;border-color:#9cb0c4}
+</style>
 </head><body>
 <main id="stage" aria-label="R and J catalogue pages. Swipe to turn, pinch to zoom. Press and hold arrows to flip quickly.">
 <div id="book">
@@ -2982,6 +2994,7 @@ window.RJ_QUOTE_MAPS.max['3.5']=[{"code":"48053","description":"Waterproof Cotto
         query('rjq-reviewstatus').textContent='This is a very large quote. Use Copy quote and paste into WhatsApp, so no products are lost.';
         return;
       }
+      window.RJQuoteSendStatus?.arm('request');
       const opened=window.open(destination,'_blank');
       if(opened)opened.opener=null;
       else window.location.href=destination;
@@ -4064,4 +4077,61 @@ window.RJFamilyQuote2026={cleanMobile};
 
 </script>
 <!-- RJ-2026-FAMILY-QUOTE-UPGRADE:END -->
+
+<div id="rj-flow-confirm" hidden role="dialog" aria-modal="true" aria-labelledby="rj-flow-title">
+  <div class="rj-flow-card">
+   <h2 id="rj-flow-title">WhatsApp quotation</h2>
+   <p id="rj-flow-description">Please finish sending in WhatsApp.</p>
+   <div class="rj-flow-actions">
+     <button type="button" id="rj-flow-yes">✓ YES, I SENT IT</button>
+     <button type="button" id="rj-flow-no" class="rj-flow-back">NOT YET</button>
+   </div>
+  </div>
+</div>
+
+<script id="rj-flow-send-confirm-script">
+(function(){
+  'use strict';
+  const KEY='RJ_PP_PENDING_WHATSAPP_V2';
+  const names={
+    request:['QUOTE SENT','Your quotation request has been sent to Andy. He can now price it and reply.'],
+    priced:['PRICED QUOTE SENT','The priced quotation has been sent back to your customer for approval.'],
+    accepted:['QUOTATION CONFIRMED','Your acceptance has been sent back to Andy, subject to his stock and delivery confirmation.'],
+    changes:['CHANGES SENT','Your requested quotation changes have been sent to Andy.']
+  };
+  let pending=null,wasAway=false,finished=false;
+  const get=id=>document.getElementById(id);
+  function read(){try{const o=JSON.parse(sessionStorage.getItem(KEY)||'null');return o&&names[o.kind]&&Number.isFinite(o.time)&&Date.now()-o.time<20*60*1000?o:null;}catch(e){return null;}}
+  function clear(){pending=null;wasAway=false;try{sessionStorage.removeItem(KEY);}catch(e){}}
+  function arm(kind){if(!names[kind])return;pending={kind,time:Date.now()};wasAway=false;finished=false;try{sessionStorage.setItem(KEY,JSON.stringify(pending))}catch(e){}}
+  function cancel(){clear();get('rj-flow-confirm').hidden=true;}
+  function renderConfirm(){const d=get('rj-flow-confirm');if(!d||!pending||finished)return;
+    get('rj-flow-title').textContent='DID YOU SEND IT?';
+    get('rj-flow-description').textContent='Did you press Send in WhatsApp? Confirm below to complete this step.';
+    get('rj-flow-yes').textContent='✓ YES, I SENT IT';
+    get('rj-flow-no').textContent='NOT YET — RETURN TO QUOTE';
+    d.hidden=false;
+  }
+  function comeBack(){if(!pending)pending=read();if(!pending||finished)return;
+    if(wasAway||Date.now()-pending.time>1300){renderConfirm();}
+  }
+  function confirm(){if(!pending)return;
+    const [heading,description]=names[pending.kind];
+    clear();finished=true;
+    get('rj-flow-title').textContent='✓ '+heading;
+    get('rj-flow-description').textContent=description;
+    get('rj-flow-yes').textContent='CONTINUE';
+    get('rj-flow-no').hidden=true;
+    get('rj-flow-confirm').hidden=false;
+  }
+  function close(){get('rj-flow-confirm').hidden=true;get('rj-flow-no').hidden=false;finished=false;}
+  window.RJQuoteSendStatus={arm,cancel};
+  get('rj-flow-yes').addEventListener('click',function(){if(finished){close();return;}confirm();});
+  get('rj-flow-no').addEventListener('click',function(){cancel();close();});
+  document.addEventListener('visibilitychange',function(){if(document.hidden&&pending)wasAway=true;else if(!document.hidden&&pending)comeBack();});
+  window.addEventListener('blur',function(){if(pending)wasAway=true;});
+  window.addEventListener('focus',function(){if(pending)comeBack();});
+  window.addEventListener('pageshow',function(){pending=read();if(pending)comeBack();});
+})();
+</script>
 </body></html>
