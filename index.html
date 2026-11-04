@@ -669,6 +669,24 @@ nav[aria-label="Catalogue page navigation"] .nav-strip {
 #rj-flow-confirm button{display:block;width:100%;border:1px solid #ffec9b;border-radius:11px;padding:12px 10px;min-height:48px;font-size:16px;font-weight:900;line-height:1.2;touch-action:manipulation;color:#081626;background:linear-gradient(#ffed93,#e8b93b)}
 #rj-flow-confirm button.rj-flow-back{background:#283d51;color:#f5f8fd;border-color:#9cb0c4}
 </style>
+
+<style id="rj-saved-quotes-catalogue-style">
+/* Added save-for-later UI only. Existing catalogue pages, code hotspots and basket untouched. */
+#rjq-saved[hidden]{display:none!important}
+#rjq-saved-open{width:100%;flex:none;background:linear-gradient(180deg,#ffe992,#dcaa32)!important;border:1px solid #fff1a8!important;color:#15202a!important;font-size:14px!important;font-weight:950!important}
+#rjq-saved-open b{background:#18334b;color:#fff;border-radius:16px;padding:2px 7px;margin-left:5px}
+#rjq-saved-list{min-height:100px;overflow-y:auto;overscroll-behavior:contain;flex:1 1 auto;display:flex;flex-direction:column;gap:10px;padding:4px 2px 8px;color:#fff}
+.rjq-saved-card{background:#f6f8fb;border:1px solid #efc75b;border-radius:13px;padding:12px;color:#172537;box-shadow:0 2px 6px #0004}
+.rjq-saved-card strong{display:block;font-size:15px;overflow-wrap:anywhere}
+.rjq-saved-meta{font-size:13px;color:#546477;margin-top:5px;line-height:1.35}
+.rjq-saved-price{font-size:20px;font-weight:950;color:#152c43;margin-top:7px}
+.rjq-saved-actions{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:10px}
+.rjq-saved-actions button{border:1px solid #c2a054;border-radius:9px;min-height:42px;font-size:13px;font-weight:900;padding:7px 12px;touch-action:manipulation}
+.rjq-saved-go{background:linear-gradient(#ffe887,#d6a024);color:#101b25}
+.rjq-saved-delete{background:#e8edf2;color:#243044}
+#rjq-saved-empty{line-height:1.45;color:#dce8f6;font-size:14px}
+#rjq-saved-close{width:100%}
+</style>
 </head><body>
 <main id="stage" aria-label="R and J catalogue pages. Swipe to turn, pinch to zoom. Press and hold arrows to flip quickly.">
 <div id="book">
@@ -1517,7 +1535,7 @@ window.RJ_QUOTE_MAPS.max['3.5']=[{"code":"48053","description":"Waterproof Cotto
       </section>
     </div>
     <div class="rjq-mask" id="rjq-review" hidden role="dialog" aria-modal="true" aria-label="Full quotation request">
-      <section class="rjq-panel"><div class="rjq-top"><strong>📋 Platinum Plus Order Summary</strong><button class="rjq-btn rjq-back" id="rjq-edit" type="button">← Edit list</button></div>
+      <section class="rjq-panel"><div class="rjq-top"><strong>📋 Your Trade Quotation</strong><button class="rjq-btn rjq-back" id="rjq-edit" type="button">← Edit list</button></div>
         <small style="color:#bdd3e7">Check products, gift choices and quantities. Final prices, VAT and delivery will be confirmed before your order is accepted.</small>
         <div class="rjq-review-summary" id="rjq-review-summary" aria-live="polite"></div>
         <div class="rjq-review-body" id="rjq-reviewtext" role="region" aria-label="Full quotation with individual product rows"></div>
@@ -2945,7 +2963,7 @@ window.RJ_QUOTE_MAPS.max['3.5']=[{"code":"48053","description":"Waterproof Cotto
   function text(){
     const {gifts,buckets,others}=reviewGroups();
     const reference=quoteReference(),status=quoteCostStatus();
-    const lines=['*R&J · SOUTH WALES*','*PLATINUM PLUS — QUOTE REQUEST*',
+    const lines=['*R&J · SOUTH WALES*','*YOUR TRADE QUOTE REQUEST*',
       'Ref: '+reference,'','*MY PRODUCTS*'];
     for(const item of [...gifts,...buckets,...others]){
       const q=Math.max(0,Number(item.qty)||0);
@@ -2999,7 +3017,7 @@ window.RJ_QUOTE_MAPS.max['3.5']=[{"code":"48053","description":"Waterproof Cotto
       if(opened)opened.opener=null;
       else window.location.href=destination;
     }else if(mode==='email'){
-      const emailUrl='mailto:'+cfg.email+'?subject='+encodeURIComponent('R&J Platinum Plus customer order request')+'&body='+encodeURIComponent(message);
+      const emailUrl='mailto:'+cfg.email+'?subject='+encodeURIComponent('R&J trade customer order request')+'&body='+encodeURIComponent(message);
       if(emailUrl.length>14000){
         query('rjq-reviewstatus').textContent='This is a very large quote. Use Copy quote and paste into an email to avoid missing products.';
         return;
@@ -4132,6 +4150,78 @@ window.RJFamilyQuote2026={cleanMobile};
   window.addEventListener('blur',function(){if(pending)wasAway=true;});
   window.addEventListener('focus',function(){if(pending)comeBack();});
   window.addEventListener('pageshow',function(){pending=read();if(pending)comeBack();});
+})();
+</script>
+
+<script id="rj-saved-quotes-catalogue-script">
+(function(){
+  'use strict';
+  const KEY='rj.pp.savedQuotes.v1',MAX=30;
+  const sheet=document.getElementById('rjq-overlay');
+  if(!sheet)return;
+  const top=sheet.querySelector('.rjq-top');
+  if(!top||document.getElementById('rjq-saved-open'))return;
+  const opener=document.createElement('button');
+  opener.type='button';opener.id='rjq-saved-open';opener.className='rjq-btn';
+  opener.innerHTML='📁 MY SAVED QUOTES <b id="rjq-saved-count">0</b>';
+  top.insertAdjacentElement('afterend',opener);
+  const shelf=document.createElement('div');shelf.id='rjq-saved';shelf.className='rjq-mask';
+  shelf.hidden=true;shelf.setAttribute('role','dialog');shelf.setAttribute('aria-modal','true');
+  shelf.setAttribute('aria-label','My saved quotations');
+  shelf.innerHTML='<section class="rjq-panel"><div class="rjq-top"><strong>📁 MY SAVED QUOTES</strong><button type="button" class="rjq-btn rjq-back" id="rjq-saved-back">← Quote list</button></div><div id="rjq-saved-list" role="region" aria-label="Saved quotations"></div><button type="button" class="rjq-btn rjq-back" id="rjq-saved-close">← Back to catalogue</button></section>';
+  document.body.append(shelf);
+  const list=shelf.querySelector('#rjq-saved-list');
+  const count=opener.querySelector('#rjq-saved-count');
+  function acceptableUrl(link){
+    try{const u=new URL(link);return u.protocol==='https:'&&u.hostname==='andywdavis.github.io'&&u.pathname==='/rj-pp-order-desk.html'&&/^#(?:s|c|k|a)=/.test(u.hash)&&u.href.length<60000;}catch(_){return false;}
+  }
+  function valid(item){return item&&typeof item.ref==='string'&&/^RJ-PP-[A-Z0-9-]{3,45}$/i.test(item.ref)&&acceptableUrl(item.url)&&Number.isFinite(item.savedAt)&&item.savedAt>0&&item.savedAt<Date.now()+86400000&&Number.isSafeInteger(item.net)&&item.net>=0&&item.net<=1e11&&Number.isSafeInteger(item.gross)&&item.gross>=0&&item.gross<=1e11;}
+  function read(){try{const v=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(v)?v.filter(valid).slice(0,MAX):[];}catch(_){return [];}}
+  function put(v){try{localStorage.setItem(KEY,JSON.stringify(v.slice(0,MAX)));return true;}catch(_){return false;}}
+  function money(p){return '£'+(p/100).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});}
+  function date(ms){return new Date(ms).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
+  function updateCount(){count.textContent=String(read().length);}
+  function draw(){
+    const saved=read();list.replaceChildren();updateCount();
+    if(!saved.length){const p=document.createElement('p');p.id='rjq-saved-empty';p.textContent='No saved quotes yet. When Andy sends you a priced quotation, tap SAVE THIS QUOTE on its gold page. It will appear here.';list.append(p);return;}
+    for(const entry of saved){
+      const card=document.createElement('article');card.className='rjq-saved-card';
+      const title=document.createElement('strong');title.textContent=entry.ref;
+      const meta=document.createElement('div');meta.className='rjq-saved-meta';meta.textContent='Saved '+date(entry.savedAt)+' · '+(entry.lines||0)+' product line'+(entry.lines===1?'':'s')+(entry.customer&&entry.customer!=='Trade customer'?' · '+entry.customer:'');
+      const price=document.createElement('div');price.className='rjq-saved-price';price.textContent='NET '+money(entry.net);
+      const gross=document.createElement('div');gross.className='rjq-saved-meta';gross.textContent='Including VAT: '+money(entry.gross);
+      const controls=document.createElement('div');controls.className='rjq-saved-actions';
+      const open=document.createElement('button');open.className='rjq-saved-go';open.type='button';open.textContent='OPEN QUOTE →';open.addEventListener('click',()=>{if(acceptableUrl(entry.url))location.assign(entry.url);});
+      const del=document.createElement('button');del.className='rjq-saved-delete';del.type='button';del.textContent='Delete';del.setAttribute('aria-label','Delete saved quote '+entry.ref);del.addEventListener('click',()=>{
+        if(!window.confirm('Delete saved quote '+entry.ref+' from this phone?'))return;
+        const remaining=read().filter(q=>q.ref!==entry.ref);if(put(remaining))draw();else alert('Unable to update saved quotes on this phone.');
+      });
+      controls.append(open,del);card.append(title,meta,price,gross,controls);list.append(card);
+    }
+  }
+  function show(){sheet.hidden=true;const review=document.getElementById('rjq-review');if(review)review.hidden=true;draw();shelf.hidden=false;}
+  function hide(toList){shelf.hidden=true;if(toList)sheet.hidden=false;}
+  opener.addEventListener('click',show);
+  shelf.querySelector('#rjq-saved-back').addEventListener('click',()=>hide(true));
+  shelf.querySelector('#rjq-saved-close').addEventListener('click',()=>hide(false));
+  shelf.addEventListener('click',e=>{if(e.target===shelf)hide(false);});
+  window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!shelf.hidden)hide(false);});
+  window.addEventListener('storage',e=>{if(e.key===KEY){updateCount();if(!shelf.hidden)draw();}});
+  updateCount();
+  // Hand-off from a quotation opened in an in-app WhatsApp browser.  The full
+  // quote is carried once through a URL fragment, then removed from the bar.
+  if(location.hash.startsWith('#rj-save=')){
+    try{
+      const entry=JSON.parse(decodeURIComponent(location.hash.slice(9)));
+      if(valid(entry)){
+        const existing=read().filter(x=>x.ref!==entry.ref);
+        if(put([entry,...existing])){
+          history.replaceState(null,'',location.pathname+location.search);
+          show();
+        } else alert('Your browser could not store the quote. Please enable site storage.');
+      }
+    }catch(_){/* ignore invalid external hash */}
+  }
 })();
 </script>
 </body></html>
