@@ -651,6 +651,13 @@ nav[aria-label="Catalogue page navigation"] .nav-strip {
   font-size:clamp(16px,4.2vw,21px)!important;
 }
 </style>
+<style id="rjq-original-product-code-visibility-fix">
+/* R&J original artwork is authoritative: do not draw a second code pill over
+   printed product codes. The extra canvas caused duplicated, misaligned and
+   overflowing numbers on pages including 3, 4 and 8. Existing transparent
+   quote-code hotspots and all underlying quote functions are left intact. */
+#rjq-gold-canvas { display:none !important; visibility:hidden !important; pointer-events:none !important; }
+</style>
 </head><body>
 <main id="stage" aria-label="R and J catalogue pages. Swipe to turn, pinch to zoom. Press and hold arrows to flip quickly.">
 <div id="book">
