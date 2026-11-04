@@ -591,6 +591,66 @@ nav[aria-label="Catalogue page navigation"] .nav-strip {
 .rjq-pick-options .rjq-pick-option[hidden],.rjq-pick-options .rjq-pick-no-results[hidden]{display:none!important}
 #rjq-guide{pointer-events:auto!important;touch-action:manipulation!important;cursor:pointer!important}
 </style>
+<style id="rjq-ios-price-summary-fix">
+/* iPhone quote review only: keep PRICE SUMMARY horizontal and totals in view.
+   Product images, product codes, basket quantities and WhatsApp flow unchanged. */
+#rjq-review #rjq-reviewtext .rjq-price-summary{
+  display:block!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+  padding:12px!important;
+  overflow:hidden!important;
+  line-height:1.25!important;
+}
+#rjq-review #rjq-reviewtext .rjq-price-summary>span{
+  display:block!important;
+  width:auto!important;
+  white-space:normal!important;
+  word-break:normal!important;
+  letter-spacing:.045em!important;
+  font-size:12px!important;
+}
+#rjq-review #rjq-reviewtext .rjq-price-summary-row{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  align-items:baseline!important;
+  justify-content:space-between!important;
+  gap:5px 10px!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+  margin-top:6px!important;
+}
+#rjq-review #rjq-reviewtext .rjq-price-summary-row small{
+  flex:1 1 120px!important;
+  min-width:0!important;
+  font-size:clamp(13px,3.6vw,16px)!important;
+  font-weight:850!important;
+  line-height:1.25!important;
+  color:#263c55!important;
+  white-space:normal!important;
+}
+#rjq-review #rjq-reviewtext .rjq-price-summary strong{
+  display:block!important;
+  flex:0 1 auto!important;
+  min-width:0!important;
+  max-width:100%!important;
+  font-size:clamp(20px,5.5vw,28px)!important;
+  line-height:1.18!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+  font-variant-numeric:tabular-nums!important;
+  text-align:right!important;
+}
+#rjq-review #rjq-reviewtext .rjq-price-summary-pending{
+  margin-top:7px!important;
+  text-align:left!important;
+  font-size:clamp(16px,4.2vw,21px)!important;
+}
+</style>
 </head><body>
 <main id="stage" aria-label="R and J catalogue pages. Swipe to turn, pinch to zoom. Press and hold arrows to flip quickly.">
 <div id="book">
@@ -2769,10 +2829,16 @@ window.RJ_QUOTE_MAPS.max['3.5']=[{"code":"48053","description":"Waterproof Cotto
       }
     }
     const cost=quoteCostStatus();
-    const priceSummary=reviewElement('div','rjq-p-total rjq-p-total-neutral');
+    const priceSummary=reviewElement('div','rjq-p-total rjq-p-total-neutral rjq-price-summary');
     priceSummary.style.marginTop='10px';
-    const totalText=cost.allPriced?'Products (ex VAT) '+quoteMoney(cost.priced):'Final total: Awaiting confirmation';
-    priceSummary.append(reviewElement('span','','PRICE SUMMARY'),reviewElement('strong','',totalText));
+    priceSummary.append(reviewElement('span','','PRICE SUMMARY'));
+    if(cost.allPriced){
+      const totalRow=reviewElement('div','rjq-price-summary-row');
+      totalRow.append(reviewElement('small','','Products (ex VAT)'),reviewElement('strong','',quoteMoney(cost.priced)));
+      priceSummary.append(totalRow);
+    }else{
+      priceSummary.append(reviewElement('strong','rjq-price-summary-pending','Final total: Awaiting confirmation'));
+    }
     list.append(priceSummary);
     list.append(reviewElement('p','rjq-p-note',cost.known
       ?'Published offers: '+quoteMoney(cost.priced)+' before VAT. Other products, VAT and delivery must be confirmed by '+cfg.rep+'.'
