@@ -1,4 +1,14 @@
 <!doctype html><html lang="en"><head>
+<script id="rj-quote-return-bridge">
+(function(){try{
+ const p=new URLSearchParams(location.hash.slice(1));const s=p.get('rjShopReturn');if(!s)return;
+ const u=new URL(s);
+ if(u.protocol!=='https:'||(!u.hostname.endsWith('.workers.dev')&&u.hostname!=='quotes.rjbh.co.uk')||!/^\/q\/[a-f0-9]{16}\.[a-f0-9]{24}$/.test(u.pathname)||u.search||u.hash)return;
+ sessionStorage.setItem('rj.pp.activeShopQuote.v1',JSON.stringify({url:u.href,time:Date.now()}));
+ sessionStorage.setItem('rj.pp.startNewShopRound.v1','1');
+}catch(e){}})();
+</script>
+
 <!-- PLATINUM QUOTE LIVE INTEGRATION v20261031 READABLE WHATSAPP FIX; R&J index v20261030: 118-page catalogue-wide search; compact controls; approved pages unchanged; division=ANDY_SOUTH_WALES -->
 <!-- Google tag (gtag.js) - R&J South Wales Catalogue -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-997WN98Q3V"></script>
@@ -687,6 +697,15 @@ nav[aria-label="Catalogue page navigation"] .nav-strip {
 #rjq-saved-empty{line-height:1.45;color:#dce8f6;font-size:14px}
 #rjq-saved-close{width:100%}
 </style>
+
+<style id="rj-pp-direct-quote-contact-css">
+#rjq-checkout-number{display:flex;flex-direction:column;gap:5px;background:#12263b;border:1px solid #66819a;border-radius:10px;padding:9px;flex-shrink:0}
+#rjq-checkout-number[hidden]{display:none!important}
+#rjq-checkout-number label{font:850 11px/1.25 system-ui;color:#fff1c8}
+#rjq-checkout-number input{box-sizing:border-box;width:100%;min-height:42px;padding:8px 11px;border-radius:8px;border:1px solid #d5b76a;background:#fff;color:#102237;font:800 18px system-ui}
+#rjq-checkout-number small{font:600 10px/1.24 system-ui;color:#c8d7e8}
+#rjq-review .rjq-actions .rjq-wa{font-size:12px;line-height:1.2}
+</style>
 </head><body>
 <main id="stage" aria-label="R and J catalogue pages. Swipe to turn, pinch to zoom. Press and hold arrows to flip quickly.">
 <div id="book">
@@ -844,7 +863,7 @@ function placeSmallPageNumber(){
  patch.style.left=d.x+'%';patch.style.top=d.y+'%';
  patch.style.width=d.w+'%';patch.style.height=d.h+'%';
 }
-function controls(){book.classList.toggle('promo-page',current===59);const d=(current===PAGE_3B||current===PAGE_2B||current===PAGE_9B||current===PAGE_70B||current===PAGE_109B)?{note:''}:MANIFEST[current-FIRST];$('count').textContent='PAGE '+displayPage(current)+' / '+LAST;$('pageBookNumber').textContent=displayPage(current);$('pageBookNumber').style.display=(current===2||current===3||current===PAGE_3B||current===PAGE_2B||current===PAGE_9B||current===PAGE_70B||current===PAGE_109B||current===26||current===27||current===4)?'none':'';placeSmallPageNumber();$('pageBookNumber').setAttribute('aria-label','Catalogue page '+displayPage(current));$('jump').value=current;$('scrub').value=current;$('scrub').setAttribute('aria-valuetext','Page '+displayPage(current));$('prev').disabled=current===FIRST;$('next').disabled=current===LAST;$('back10').disabled=current===FIRST;$('fwd10').disabled=current===LAST;$('page59Offer').style.display='none';const t=d.note||'';$('notice').textContent=t?'TO CHECK: '+t:'';$('notice').style.display=t?'block':'none'}
+function controls(){book.classList.toggle('promo-page',current===59);const d=(current===PAGE_3B||current===PAGE_2B||current===PAGE_9B||current===PAGE_70B||current===PAGE_109B)?{note:''}:MANIFEST[current-FIRST];$('count').textContent='PAGE '+displayPage(current)+' / '+LAST;$('pageBookNumber').textContent=displayPage(current);$('pageBookNumber').style.display=(current===2||current===3||current===PAGE_3B||current===PAGE_2B||current===PAGE_9B||current===PAGE_70B||current===PAGE_109B||current===26||current===27||current===4)?'none':'';placeSmallPageNumber();$('pageBookNumber').setAttribute('aria-label','Catalogue page '+displayPage(current));$('jump').value=current;$('scrub').value=current;$('scrub').setAttribute('aria-valuetext','Page '+displayPage(current));$('prev').disabled=current===FIRST;$('next').disabled=current===LAST;$('back10').disabled=current===FIRST;$('fwd10').disabled=current===LAST;$('page59Offer').style.display='none';const t=d.note||'';$('notice').textContent=t?'TO CHECK: '+t:'';$('notice').style.display=t?'block':'none';try{sessionStorage.setItem('rj.pp.lastCataloguePage.v1',String(current));localStorage.setItem('rj.pp.lastCataloguePage.v1',JSON.stringify({page:current,time:Date.now()}))}catch(e){}}
 function prime(n){for(const i of [nextInSequence(n,-1),nextInSequence(n,1)])if(i>=FIRST&&i<=LAST){const im=new Image();im.onerror=()=>{const failed=im.getAttribute('src'),alt=fallbackPath(failed);missingPageUrls.add(failed);if(alt&&!missingPageUrls.has(alt))im.src=alt};im.src=src(i)}}
 function direct(n){if(!validPage(n))return;if(rjOfferTour && !RJ_PRICED_PAGES.includes(n))rjOfferTour=false;if(current===59&&n!==59&&window.RJXR59&&!window.RJXR59.canLeave(n))return;cancelCurl();busy=false;clearTimeout(animationTimer);leaf.className='';leaf.style.display='none';leaf.style.animationDuration='';$('current').style.visibility='';$('nextPage').style.display='none';$('nextPage').style.zIndex='';book.classList.remove('riffling');current=n;mainImg.src=src(n);resetZoom();controls();prime(n);try{history.replaceState(null,'','#page='+n)}catch(e){}}
 // Seamless GPU-rendered rolling-paper curl. Each pixel of the lifting paper is bent
@@ -1190,7 +1209,16 @@ stage.addEventListener('dblclick',e=>{if(current===49){e.preventDefault();return
 try{fast(localStorage.getItem('rjRollTurnFast')==='1')}catch(e){fast(false)}
 
 $('scrub').step='0.5';$('jump').step='0.5';
-const init=Number(location.hash.match(/page=(\d+(?:\.\d+)?)/)?.[1]);direct(validPage(init)?init:(init===2.75?3:1));
+const init=Number(location.hash.match(/page=(\d+(?:\.\d+)?)/)?.[1]);
+const quotedReturn=Number(new URLSearchParams(location.search).get('cataloguePage'));
+let pendingQuoteReturn=0;
+try{
+ const data=JSON.parse(localStorage.getItem('rj.pp.resumeAfterQuote.v1')||'null');
+ if(data&&Number.isFinite(data.time)&&Date.now()-data.time<7*86400000&&validPage(Number(data.page)))pendingQuoteReturn=Number(data.page);
+ if(data)localStorage.removeItem('rj.pp.resumeAfterQuote.v1');
+}catch(e){}
+const pageToOpen=validPage(init)?init:(init===2.75?3:(validPage(quotedReturn)?quotedReturn:(pendingQuoteReturn||1)));
+direct(pageToOpen);
 setTimeout(()=>{$('hint').style.opacity='0'},2400);
 
 // The downloaded preview is a file, not a live installable website.
@@ -1514,6 +1542,25 @@ window.RJ_QUOTE_MAPS.max['3.5']=[{"code":"48053","description":"Waterproof Cotto
         const pack=qtyStep(item);if(pack>1)item.qty=toPackMultiple(item.qty,pack);
   }
   function persist(){save(key,items);query('rjq-count').textContent=items.reduce((a,p)=>a+(qtyStep(p)>1?packValue(p.qty):num(p.qty)),0)}
+  // Customers returning from their accepted quotation start a NEW shopping round.
+  // The Cloudflare trial retains already-accepted items and agreed prices separately.
+  let activeShopQuote='';
+  try{
+    const saved=JSON.parse(sessionStorage.getItem('rj.pp.activeShopQuote.v1')||'null');
+    if(saved&&Date.now()-saved.time<7*86400000){
+      const u=new URL(saved.url);
+      if(u.protocol==='https:'&&(u.hostname.endsWith('.workers.dev')||u.hostname==='quotes.rjbh.co.uk')&&/^\/q\/[a-f0-9]{16}\.[a-f0-9]{24}$/.test(u.pathname)&&!u.search&&!u.hash)activeShopQuote=u.href;
+    }
+    if(activeShopQuote&&sessionStorage.getItem('rj.pp.startNewShopRound.v1')==='1'){
+      // A fresh shopping round; accepted and unaccepted quote lines are stored remotely.
+      items=[];save(key,items);sessionStorage.removeItem('rj.pp.startNewShopRound.v1');
+    }
+  }catch(e){}
+  const quotePhoneCache='rj.pp.replyPhone.7d.v1';
+  const normaliseBuyerPhone=v=>{const s=String(v||'').replace(/[^\d+]/g,'');const n=s.startsWith('+44')?'44'+s.slice(3):s.startsWith('0044')?s.slice(2):s.startsWith('0')?'44'+s.slice(1):s;return /^447\d{9}$/.test(n)?n:''};
+  let lastBuyerPhone='';
+  try{const c=JSON.parse(localStorage.getItem(quotePhoneCache)||'null');if(c&&Date.now()-c.time<7*86400000)lastBuyerPhone=normaliseBuyerPhone(c.phone)||'';}catch(e){}
+
   const topNav=document.querySelector('nav[aria-label="Catalogue page navigation"]');
   if(topNav&&!document.getElementById('rjq-guide')) topNav.insertAdjacentHTML('afterbegin',`<div id="rjq-guide" role="button" tabindex="0" title="Choose from all products on this page" aria-label="Choose a product code from this page"><span aria-hidden="true">👆</span><strong>TAP A PRODUCT CODE</strong><span>OR TAP HERE TO CHOOSE</span></div>`);
   const nav=document.querySelector('.scrub-top')||document.querySelector('.nav-strip');
@@ -1539,7 +1586,8 @@ window.RJ_QUOTE_MAPS.max['3.5']=[{"code":"48053","description":"Waterproof Cotto
         <small style="color:#bdd3e7">Check products, gift choices and quantities. Final prices, VAT and delivery will be confirmed before your order is accepted.</small>
         <div class="rjq-review-summary" id="rjq-review-summary" aria-live="polite"></div>
         <div class="rjq-review-body" id="rjq-reviewtext" role="region" aria-label="Full quotation with individual product rows"></div>
-        <div class="rjq-actions"><button class="rjq-btn rjq-wa" id="rjq-whatsapp" type="button">WhatsApp ${esc(cfg.rep)}</button><button class="rjq-btn" id="rjq-email" type="button">Email ${esc(cfg.rep)}</button><button class="rjq-btn" id="rjq-copy" type="button">Copy quote</button></div>
+        <div class="rjq-checkout-number" id="rjq-checkout-number"><label for="rjq-customer-wa">YOUR WHATSAPP NUMBER — SO ANDY CAN REPLY DIRECTLY</label><input id="rjq-customer-wa" type="tel" inputmode="tel" autocomplete="tel" maxlength="22" placeholder="07xxx xxxxxx"><small>Only needed for the first request. Your quote expires after 7 days.</small></div>
+        <div class="rjq-actions"><button class="rjq-btn rjq-wa" id="rjq-whatsapp" type="button">📦 SEND QUOTE TO ${esc(cfg.rep)}</button><button class="rjq-btn" id="rjq-email" type="button">Email ${esc(cfg.rep)}</button><button class="rjq-btn" id="rjq-copy" type="button">Copy quote</button></div>
         <div class="rjq-notice" id="rjq-reviewstatus" role="status"></div>
         <button class="rjq-btn rjq-back" id="rjq-exit" type="button">← Back to catalogue</button>
       </section>
@@ -2836,6 +2884,10 @@ window.RJ_QUOTE_MAPS.max['3.5']=[{"code":"48053","description":"Waterproof Cotto
     return row;
   }
   function renderReview(){
+    const customerContact=query('rjq-checkout-number');
+    if(customerContact)customerContact.hidden=Boolean(activeShopQuote);
+    const contactInput=query('rjq-customer-wa');
+    if(contactInput&&!contactInput.value&&lastBuyerPhone)contactInput.value=lastBuyerPhone;
     const {gifts,buckets,others,total}=reviewGroups();
     const summary=query('rjq-review-summary'),list=query('rjq-reviewtext');
     summary.replaceChildren();list.replaceChildren();
@@ -2955,7 +3007,7 @@ window.RJ_QUOTE_MAPS.max['3.5']=[{"code":"48053","description":"Waterproof Cotto
         parts.push(columns.map(enc).join(','));
       }
       if(parts.length<2||parts.length>121)return '';
-      const url='https://andywdavis.github.io/rj-pp-order-desk.html#o='+parts.join('~');
+      const url='https://andywdavis.github.io/rj-pp-order-desk.html?cataloguePage='+encodeURIComponent(page())+'#o='+parts.join('~');
       return url.length<=4000?url:'';
     }catch(_){return ''}
   }
@@ -3001,11 +3053,67 @@ window.RJ_QUOTE_MAPS.max['3.5']=[{"code":"48053","description":"Waterproof Cotto
     box.remove();
     query('rjq-reviewstatus').textContent=success?'Full order request copied. Your basket is still saved.':'Please use WhatsApp or Email to send the quote.';
   }
+  let sendingPPQuote=false;
+  async function submitPPQuote(){
+    if(sendingPPQuote)return;
+    const status=query('rjq-reviewstatus');status.textContent='';
+    const requestItems=items.filter(x=>Number(x.qty)>0).map(x=>{
+      const known=quoteKnownPrice(x),qty=Number(x.qty);
+      // Keep approved bundle prices and earned free gifts; rep can always amend.
+      const pennies=known&&qty>0?known.total*100/qty:null;
+      const approved=Number.isFinite(pennies)&&Math.abs(pennies-Math.round(pennies))<0.000001;
+      return {code:String(x.code||''),description:String(x.description||'Catalogue product'),
+        page:Number(x.page)||1,qty,unitPrice:x.gift?0:(!activeShopQuote&&approved?Math.round(pennies)/100:null)};
+    });
+    if(!requestItems.length||requestItems.length>80){status.textContent='Please choose 1–80 products in this quote.';return}
+    // SHOP MORE: return to the existing customer quote first. Its live screen
+    // reads the latest version from Cloudflare before submitting added items;
+    // this avoids stale-quote conflicts and preserves accepted/locked products.
+    if(activeShopQuote){
+      const u=new URL(activeShopQuote);
+      if(u.origin!=='https://rj-quote-trial.andy-davis.workers.dev'||
+         !/^\/q\/[a-f0-9]{16}\.[a-f0-9]{24}$/.test(u.pathname)){
+        status.textContent='Please reopen your original quote and tap Shop More again.';return;
+      }
+      const additions={cataloguePage:page(),lines:requestItems.map(x=>({...x,unitPrice:null}))};
+      const link=u.href+'#rjMore='+encodeURIComponent(JSON.stringify(additions));
+      if(link.length>45000){status.textContent='Your added list is too large. Please send a smaller group of products.';return;}
+      try{localStorage.setItem('rj.pp.resumeAfterQuote.v1',JSON.stringify({page:page(),time:Date.now()}))}catch(e){}
+      window.location.assign(link);
+      return;
+    }
+    const number=normaliseBuyerPhone(query('rjq-customer-wa')?.value||'');
+    if(!number){status.textContent='Enter your WhatsApp number once, so Andy can reply directly.';query('rjq-customer-wa')?.focus();return;}
+    const recipient=number;
+    const requestPath='/api/new';
+    const remotePayload={customerPhone:number,lines:requestItems,cataloguePage:page()};
+    sendingPPQuote=true;
+    const button=query('rjq-whatsapp');button.disabled=true;button.textContent='PREPARING QUOTE…';
+    const abort=new AbortController(),timeout=setTimeout(()=>abort.abort(),16000);
+    try{
+      const res=await fetch('https://rj-quote-trial.andy-davis.workers.dev'+requestPath,
+       {method:'POST',mode:'cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(remotePayload),signal:abort.signal});
+      const result=await res.json();
+      if(!res.ok)throw Error(result.error||'Could not prepare your quote.');
+      if(!result.repUrl||!/^https:\/\/rj-quote-trial\.andy-davis\.workers\.dev\/r\/[a-f0-9]{16}\.[a-f0-9]{24}$/.test(result.repUrl))throw Error('Quote link incomplete. Please try again.');
+      if(!activeShopQuote){
+        try{localStorage.setItem(quotePhoneCache,JSON.stringify({phone:recipient,time:Date.now()}))}catch(e){}
+        lastBuyerPhone=recipient;
+      }
+      try{localStorage.setItem('rj.pp.resumeAfterQuote.v1',JSON.stringify({page:page(),time:Date.now()}))}catch(e){}
+      // The quote is created only once per click, and WhatsApp opens to the correct rep.
+      const msg='📦 OPEN QUOTE REQUEST'+'\n'+result.repUrl;
+      window.location.assign('https://wa.me/'+cfg.wa+'?text='+encodeURIComponent(msg));
+    }catch(e){
+      status.textContent=(e.name==='AbortError'?'Request timed out. Your basket is safe.':(e.message||'Could not send. Your basket is safe.'));
+    }finally{clearTimeout(timeout);sendingPPQuote=false;button.disabled=false;button.textContent='📦 SEND QUOTE TO '+cfg.rep.toUpperCase()}
+  }
   function send(mode){
     if(!items.length)return;
+    if(mode==='whatsapp'){submitPPQuote();return}
     const message=text();
     if(mode==='copy'){copyQuote(message);return;}
-    if(mode==='whatsapp'){
+    if(mode==='legacy-whatsapp'){
       const destination='https://wa.me/'+cfg.wa+'?text='+encodeURIComponent(message);
       // Large query strings can truncate, silently losing products: never allow that.
       if(destination.length>14000){
@@ -3015,6 +3123,7 @@ window.RJ_QUOTE_MAPS.max['3.5']=[{"code":"48053","description":"Waterproof Cotto
       // Stay in the existing browser tab: opening a new one leaves Safari users
       // looking at an empty page after WhatsApp hands back control.
       // WhatsApp still requires the customer to press its own Send arrow.
+      try{localStorage.setItem('rj.pp.resumeAfterQuote.v1',JSON.stringify({page:page(),time:Date.now()}))}catch(e){}
       window.RJQuoteSendStatus?.arm('request');
       window.location.assign(destination);
     }else if(mode==='email'){
